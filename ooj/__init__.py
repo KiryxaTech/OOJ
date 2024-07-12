@@ -5,7 +5,9 @@
 :copyright: (c) 2024 KiryxaTech
 """
 
-from .json_file import JsonFile
-from .key_value import KeyValue
 
-from .exceptions import exceptions
+READ_MODE = 'r'
+WRITE_MODE = 'w'
+
+
+from .file import JsonFile
