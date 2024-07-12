@@ -10,4 +10,4 @@ READ_MODE = 'r'
 WRITE_MODE = 'w'
 
 
-from .file import JsonFile
+from .file import key, JsonFile
