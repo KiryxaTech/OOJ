@@ -61,4 +61,4 @@ class JsonFile:
         self._dict = self.read()
 
     def _push_dict_changes(self):
-        self.write(self._data)
+        self.write(self._dict)
