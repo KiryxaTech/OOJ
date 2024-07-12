@@ -36,7 +36,7 @@ class JsonFile:
     @property
     def encoding(self):
         return self._encoding
-    
+
     def read(self) -> dict:
         with open(self._path, 'r', encoding=self._encoding) as json_file:
             return json.load(json_file)
@@ -45,17 +45,33 @@ class JsonFile:
         with open(self._path, 'w', encoding=self._encoding) as json_file:
             json.dump(data, json_file, indent=4)
 
-    def add(self, key: key):
-        self._dict[key.id] = key.value
+    def add(self, value, *keys):
+        d = self._dict
+        for key in keys[:-1]:
+            if key not in d or not isinstance(d[key], dict):
+                d[key] = {}
+                d = d[key]
+            else:
+                return
+            
+            d[keys[-1]] = value
+
         self._push_dict_changes()
+        self._update_dict()
 
     def remove(self, *keys):
+        d = self._dict
         for key in keys[:-1]:
-            self._dict = self._dict.get(key, {})
-        if keys and keys[-1] in self._dict:
-            del self._dict[keys[-1]]
+            if key in d and isinstance(d[key], dict):
+                d = d[key]
+            else:
+                return
+            
+        if keys[-1] in d:
+            del d[keys[-1]]
         
         self._push_dict_changes()
+        self._update_dict()
 
     def _update_dict(self):
         self._dict = self.read()
