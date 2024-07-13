@@ -1,7 +1,8 @@
 <div align="center">
-    <h1>
-        OBJECT ORIENTATED JSON
-    </h1>
+    <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/libDarkImage.png">
+        <img src="./docs/images/libLightImage.png">
+    </picture>
 
 ![PyPI](https://img.shields.io/pypi/v/ooj)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/ooj?color=green&label=downloads)
