@@ -11,5 +11,5 @@ WRITE_MODE = 'w'
 
 
 from .json_file import JsonFile
-from .json_serilizer import JsonSerializer
+from .json_serializer import JsonSerializer
 from .exceptions import exceptions
