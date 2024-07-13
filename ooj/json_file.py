@@ -85,7 +85,7 @@ class JsonFile:
     def select(self, select_list):
         select_dict = {}
 
-        for key, value in self._dict:
+        for key, value in self._dict.items():
             if value in select_list:
                 select_dict[key] = value
 
