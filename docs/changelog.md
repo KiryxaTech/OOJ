@@ -11,3 +11,10 @@ Version missing =(. Sorry...
 
 ## Version 0.0.1.2
 Added the ability to nest when adding or deleting an object. A helper class called key has been created.
+
+## Version 0.0.1.3 (Soon)
+- Created a linq subclass in JsonFile.
+- Added the ability to combine JsonFile with a dictionary or JsonFile.
+- Added the ability to subtract identical keys in two dictionaries or JsonFile.
+- Added the ability to find duplicates in two dictionaries or JsonFile.
+- Added the ability to select the range of keys by values.
