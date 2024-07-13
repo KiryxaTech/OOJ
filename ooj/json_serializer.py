@@ -1,4 +1,5 @@
 import json
+from typing import Any, List, Dict
 
 from .exceptions.exceptions import NotSerializableException
 
@@ -12,15 +13,16 @@ class JsonSerializer:
         Parameters:
         - options (dict): Optional dictionary with settings.
         """
+
         self._options = options if options else {}
         self._date_format = self._options.get("date_format", "iso8601")
         self._encoding = self._options.get("encoding", "utf-8")
-        self._ignore_errors = self._options.get("ignore_errors", False)
+        self._ignore_errors = self._options.get("ignore_errors", {})
         self._custom_types = self._options.get("custom_types", {})
         self._transform_rules = self._options.get("transform_rules", {})
         self._indent = self._options.get("indent", None)
-        self._include_fields = self._options.get("include_fields", None)
-        self._exclude_fields = self._options.get("exclude_fields", None)
+        self._include_fields: List[Dict[str, Any]] = self._options.get("include_fields", [])
+        self._exclude_fields: List[Dict[str, Any]] = self._options.get("exclude_fields", [])
         self._handle_cycles = self._options.get("handle_cycles", "error")
 
     def serialize(self, obj: object) -> str:
@@ -34,6 +36,9 @@ class JsonSerializer:
         - str: Serialized JSON string.
         """
         if self.is_serializable(obj):
+            obj = self._include_fields_to_obj(obj)
+            obj = self._exclude_fields_to_obj(obj)
+
             return json.dumps(obj.__dict__, indent=self._indent)
         
         self.handle_error(NotSerializableException)
@@ -69,6 +74,9 @@ class JsonSerializer:
         - file_path (str): Path to the file.
         """
         if self.is_serializable(obj):
+            obj = self._include_fields_to_obj(obj)
+            obj = self._exclude_fields_to_obj(obj)
+
             with open(file_path, 'w', encoding=self._encoding) as json_file:
                 json.dump(obj.__dict__, json_file, indent=self._indent)
         else:
@@ -137,3 +145,35 @@ class JsonSerializer:
         - dict: Dictionary of options.
         """
         return self._options
+    
+    def _include_fields_to_obj(self, obj: object) -> object:
+        """
+        Include fields for an object and returns it.
+
+        Parameters:
+        - obj (object): Serializable object.
+
+        Returns:
+        - object: Serialized object with included fields.
+        """
+        for field in self._include_fields:
+                for name, value in field.items():
+                    setattr(obj, name, value)
+
+        return obj
+    
+    def _exclude_fields_to_obj(self, obj: object) -> object:
+        """
+        Excludes fields for an object and returns it.
+
+        Parameters:
+        - obj (object): Serializable object.
+
+        Returns:
+        - object: Serialized object with excluded fields.
+        """
+        for field in self._exclude_fields:
+                for name, _ in field.items():
+                    delattr(obj, name)
+
+        return obj
