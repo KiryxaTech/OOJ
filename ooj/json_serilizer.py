@@ -1,3 +1,5 @@
+import json
+
 class JsonSerializer:
     """A class for serializing and deserializing objects."""
 
@@ -28,6 +30,8 @@ class JsonSerializer:
         Returns:
         - str: Serialized JSON string.
         """
+        if self.is_serializable(obj):
+            return json.dumps(obj.__dict__, indent=self._indent)
     
     def deserialize(self, json_str: str, cls: type) -> object:
         """
@@ -92,6 +96,7 @@ class JsonSerializer:
         Returns:
         - bool: True if the object is serializable, False otherwise.
         """
+        return hasattr(obj, '__dict__')
 
     def get_serialization_options(self) -> dict:
         """
