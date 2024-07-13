@@ -1,5 +1,8 @@
 # Change Log
 
+## Version levels
+`[Release].[PreRelease].[NewFeatues].[BugFix]`
+
 ## Version 0.0.1.0
 Created JsonFile class and added basic functionality.
 
