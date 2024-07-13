@@ -1,4 +1,4 @@
-from ooj.json_serilizer import JsonSerializer
+from ooj.json_serializer import JsonSerializer
 
 class Person:
     def __init__(self, name, age):
