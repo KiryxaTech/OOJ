@@ -44,6 +44,13 @@ class JsonSerializer:
         Returns:
         - object: Deserialized object.
         """
+        data = json_str.__dict__
+
+        obj = cls.__new__(cls)
+        for name, value in data.items():
+            setattr(obj, name, value)
+
+        return obj
     
     def serialize_to_file(self, obj: object, file_path: str):
         """
