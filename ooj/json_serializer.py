@@ -14,6 +14,7 @@ class JsonSerializer:
         """
         self._options = options if options else {}
         self._date_format = self._options.get("date_format", "iso8601")
+        self._encoding = self._options("encoding", "utf-8")
         self._ignore_errors = self._options.get("ignore_errors", False)
         self._custom_types = self._options.get("custom_types", {})
         self._transform_rules = self._options.get("transform_rules", {})
@@ -48,7 +49,7 @@ class JsonSerializer:
         Returns:
         - object: Deserialized object.
         """
-        if self.is_serializable(json_str):
+        if self.is_serializable(cls):
             data = json_str.__dict__
 
             obj = cls.__new__(cls)
@@ -67,6 +68,11 @@ class JsonSerializer:
         - obj (object): Serializable object.
         - file_path (str): Path to the file.
         """
+        if self.is_serializable(obj):
+            with open(file_path, 'w', encoding=self._encoding) as json_file:
+                json.dump(obj.__dict__, json_file, indent=self._indent)
+        
+        self.handle_error(NotSerializableException)
 
     def deserialize_from_file(self, file_path: str, cls: type) -> object:
         """
@@ -79,6 +85,17 @@ class JsonSerializer:
         Returns:
         - object: Deserialized object.
         """
+        if self.is_serializable(cls):
+            with open(file_path, 'r', encoding=self._encoding) as serealize_data_file:
+                data = json.load(serealize_data_file)
+
+            obj = cls.__new__(cls)
+            for name, value in data.items():
+                setattr(obj, name, value)
+
+            return obj
+        
+        self.handle_error(NotSerializableException)
     
     def register_custom_type(self, cls: type, serializer: callable):
         """
