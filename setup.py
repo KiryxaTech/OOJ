@@ -7,7 +7,7 @@ from setuptools import setup
 :copyright: (c) 2024 KiryxaTech
 """
 
-version = "0.0.1.2"
+version = "0.0.2.0"
 
 with open('README.md', encoding='utf-8') as f:
     long_discription = f.read()
@@ -19,7 +19,7 @@ setup(
     author='KiryxaTech',
     author_email='kiryxatech@gmail.com',
 
-    description=(u'OOJ (Object Oriented JSON) is a Python library designed to simplify working with JSON data. ',
+    description=(u'OOJ (Object Oriented JSON) is a Python library designed to simplify working with JSON data. '
                  u'It allows you to create, process, and interact with JSON data using an object-oriented approach.'),
     long_description=long_discription,
     long_description_content_type='text/markdown',
