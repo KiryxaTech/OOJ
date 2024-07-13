@@ -54,7 +54,7 @@ class JsonFile:
             else:
                 return
             
-            d[keys[-1]] = value
+        d[keys[-1]] = value
 
         self._push_dict_changes()
         self._update_dict()
