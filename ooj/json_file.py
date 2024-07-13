@@ -60,12 +60,16 @@ class JsonFile:
         self._update_dict()
 
     def union(self, file_or_dict: Union['JsonFile', Dict]):
+        union_dict = self._dict
+
         if isinstance(file_or_dict, JsonFile):
             file_or_dict = file_or_dict.read()
         if isinstance(file_or_dict, Dict):
-            self._dict.update(file_or_dict)
+            union_dict.update(file_or_dict)
             self._push_dict_changes()
             self._update_dict()
+
+        return union_dict
 
     def intersect(self, file_or_dict: Union['JsonFile', Dict]):
         if isinstance(file_or_dict, JsonFile):
@@ -76,10 +80,17 @@ class JsonFile:
             if key in self._dict:
                 intersect_dict[key] = self.read()[key]
         
-        self._dict = intersect_dict
-        
-        self._push_dict_changes()
-        self._update_dict()
+        return intersect_dict
+
+    def select(self, select_list):
+        select_dict = {}
+
+        for key, value in self._dict:
+            if value in select_list:
+                select_dict[key] = value
+
+        return select_dict
+
 
     def _update_dict(self):
         self._dict = self.read()
