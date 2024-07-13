@@ -1,5 +1,7 @@
 import json
 
+from .exceptions.exceptions import NotSerializableException
+
 class JsonSerializer:
     """A class for serializing and deserializing objects."""
 
@@ -32,6 +34,8 @@ class JsonSerializer:
         """
         if self.is_serializable(obj):
             return json.dumps(obj.__dict__, indent=self._indent)
+        
+        self.handle_error(NotSerializableException)
     
     def deserialize(self, json_str: str, cls: type) -> object:
         """
@@ -44,13 +48,16 @@ class JsonSerializer:
         Returns:
         - object: Deserialized object.
         """
-        data = json_str.__dict__
+        if self.is_serializable(json_str):
+            data = json_str.__dict__
 
-        obj = cls.__new__(cls)
-        for name, value in data.items():
-            setattr(obj, name, value)
+            obj = cls.__new__(cls)
+            for name, value in data.items():
+                setattr(obj, name, value)
 
-        return obj
+            return obj
+        
+        self.handle_error(NotSerializableException)
     
     def serialize_to_file(self, obj: object, file_path: str):
         """
