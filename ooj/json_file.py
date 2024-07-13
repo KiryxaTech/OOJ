@@ -73,8 +73,8 @@ class JsonFile:
         
         intersect_dict = {}
         for key in file_or_dict:
-            if key in self._dict.keys:
-                intersect_dict[key] = self[key]
+            if key in self._dict:
+                intersect_dict[key] = self.read()[key]
         
         self._dict = intersect_dict
         
