@@ -8,6 +8,15 @@ class JsonSerializer:
         Parameters:
         - options (dict): Optional dictionary with settings.
         """
+        self._options = options if options else {}
+        self._date_format = self._options.get("date_format", "iso8601")
+        self._ignore_errors = self._options.get("ignore_errors", False)
+        self._custom_types = self._options.get("custom_types", {})
+        self._transform_rules = self._options.get("transform_rules", {})
+        self._indent = self._options.get("indent", None)
+        self._include_fields = self._options.get("include_fields", None)
+        self._exclude_fields = self._options.get("exclude_fields", None)
+        self._handle_cycles = self._options.get("handle_cycles", "error")
 
     def serialize(self, obj: object) -> str:
         """
