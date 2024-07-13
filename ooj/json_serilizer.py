@@ -70,6 +70,7 @@ class JsonSerializer:
         - cls (type): Class type.
         - serializer (callable): Custom serializer function.
         """
+        self._custom_types[cls] = serializer
 
     def handle_error(self, error: Exception):
         """
@@ -78,6 +79,8 @@ class JsonSerializer:
         Parameters:
         - error (Exception): Error to be handled.
         """
+        if error not in self._ignore_errors:
+            raise error
     
     def is_serializable(self, obj: object) -> bool:
         """
@@ -97,3 +100,4 @@ class JsonSerializer:
         Returns:
         - dict: Dictionary of options.
         """
+        return self._options
