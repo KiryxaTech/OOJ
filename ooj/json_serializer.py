@@ -5,7 +5,7 @@ try:
 except:
     from typing_extensions import Literal
 
-from .exceptions.exceptions import NotSerializableException
+from .exceptions.exceptions import NotSerializableException, CyclicFieldError
 from datetime import datetime
 
 DATE_FORMATS = Literal["iso8601", "rfc2822"]
@@ -46,6 +46,7 @@ class JsonSerializer:
             obj = self._include_fields_to_obj(obj)
             obj = self._apply_transform_rules(obj)
             obj = self._exclude_fields_to_obj(obj)
+            obj = self._handling_cycling_fields(obj)
 
             try:
                 for key, value in obj.__dict__.items():
@@ -90,6 +91,7 @@ class JsonSerializer:
             obj = self._include_fields_to_obj(obj)
             obj = self._exclude_fields_to_obj(obj)
             obj = self._apply_transform_rules(obj)
+            obj = self._handling_cycling_fields(obj)
 
             with open(file_path, 'w', encoding=self._encoding) as json_file:
                 json.dump(obj.__dict__, json_file, indent=self._indent)
@@ -149,6 +151,24 @@ class JsonSerializer:
         """
         if error not in self._ignore_errors:
             raise error
+        
+    def _handling_cycling_fields(self, obj: object) -> object:
+        if self._handle_cycles == "ignore": return
+
+        if self.is_serializable(obj):
+            data = obj.__dict__
+        else:
+            self._handle_error(NotSerializableException)
+
+        for key, _ in data.items():
+            if isinstance(key, dict):
+                match self._handle_cycles:
+                    case "error":
+                        self._handle_error(CyclicFieldError)
+                    case "replace":
+                        obj.__dict__[key] = None
+
+        return obj
     
     def _include_fields_to_obj(self, obj: object) -> object:
         """
@@ -185,7 +205,8 @@ class JsonSerializer:
     def _apply_transform_rules(self, obj: object) -> object:
         if self.is_serializable(obj):
 
-            for key, value in data.items():
+            # Исправлена data -> obj
+            for key, value in obj.items():
                 obj.__dict__[key] = self._transform_rules[key](obj.__dict__[key])
 
                 return obj
