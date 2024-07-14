@@ -7,7 +7,7 @@ from setuptools import setup
 :copyright: (c) 2024 KiryxaTech
 """
 
-version = "0.0.3.1"
+version = "0.0.3.2"
 
 with open('README.md', encoding='utf-8') as f:
     long_discription = f.read()
