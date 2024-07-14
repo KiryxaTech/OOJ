@@ -21,7 +21,21 @@ Added the ability to nest when adding or deleting an object. A helper class call
 - Added tests covering new methods.
 - Bugs fixed
 
-### Version 0.0.3
+### 0.0.3.0 (Yank: bug import)
 - Implementation of serialization and deserialization of objects.
 - Writing tests.
 - Adding documentation.
+
+### 0.0.3.1 - 0.0.3.5 (Yank: bug import)
+- Bug imports.
+
+### 0.0.3.6
+- Fixed to bug imports.
+
+## Soon
+
+### 0.0.4.0
+- Improvement of current library classes.
+- Code cleaning.
+- Adding new methods to `JsonFile`.
+- Support for using `JsonFile` together with `JsonSerializer`.
