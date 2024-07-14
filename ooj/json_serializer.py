@@ -5,7 +5,7 @@ try:
 except:
     from typing_extensions import Literal
 
-from ooj.exceptions.exceptions import NotSerializableException, CyclicFieldError
+from .exceptions.errors import NotSerializableException, CyclicFieldError
 
 
 HANDLE_CYCLES = Literal["error", "ignore", "replace"]

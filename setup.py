@@ -7,7 +7,7 @@ from setuptools import setup
 :copyright: (c) 2024 KiryxaTech
 """
 
-version = "0.0.3.2"
+version = "0.0.3.6"
 
 with open('README.md', encoding='utf-8') as f:
     long_discription = f.read()
@@ -27,7 +27,8 @@ setup(
     url='https://github.com/KiryxaTechDev/ooj',
     download_url=f'https://github.com/KiryxaTechDev/ooj/archive/refs/tags/{version}.zip',
 
-    packages=['ooj'],
+    packages=['ooj',
+              'ooj.exceptions'],
 
     classifiers=[
         'License :: OSI Approved :: Apache Software License',
