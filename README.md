@@ -27,3 +27,85 @@ pip install ooj
 ```bash
 pip3 install ooj
 ```
+
+## Usage
+### Import library
+```python
+import ooj
+```
+
+### Working with JsonFile
+#### Creating a JsonFile object
+Create a `JsonFile` object:
+```python
+my_file = ooj.JsonFile('your/path/to/file.json')
+```
+
+#### Read and write
+Read or write:
+```python
+data = {
+ "name": "Jane",
+ "age": 22,
+ "is_happy": True
+}
+
+my_file.write(data)
+
+print(my_file.read())
+
+PS:
+>>> {
+>>>     "name": "Jane",
+>>>     "age": 22,
+>>>     "is_happy": True
+>>> }
+```
+
+#### Sampling
+```python
+data = {
+ "1": -7,
+ "2": 3,
+ "3": 9
+}
+
+selected_keys_dict = my_file.select(range(0, 10))
+print(selected_keys_dict)
+
+PS:
+>>> {"2": 3, "3": 9}
+```
+
+### Create serialization
+You can serialize and deserialize objects.
+#### Creating a serializer
+```python
+from ooj import JsonSerializer
+from ooj.excptions import NotSerializableError
+
+# Options for serialization
+options = {
+    "indent": 4,
+    "ignore_errors": NotSerializableError
+}
+
+serializer = JsonSerializer(options=options)
+```
+
+#### Serialize the object
+```python
+class Person:
+    def __init__(self, name, age):
+        self.name = name
+        self.age = age
+
+serialized_person = serializer.serialize(Person("Mike", 29))
+print(serialized_person)
+
+PS:
+>>> {
+>>>     'name': 'Mike',
+>>>     'age': 29
+>>> }
+```

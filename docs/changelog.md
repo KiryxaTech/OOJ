@@ -21,10 +21,7 @@ Added the ability to nest when adding or deleting an object. A helper class call
 - Added tests covering new methods.
 - Bugs fixed
 
-
-## Soon versions
-
-### Version 0.0.3.0
+### Version 0.0.3
 - Implementation of serialization and deserialization of objects.
 - Writing tests.
 - Adding documentation.
