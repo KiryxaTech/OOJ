@@ -1,7 +1,15 @@
 import json
-from typing import Any, List, Dict
+from typing import Any, List, Dict, Union
+try:
+    from typing import Literal
+except:
+    from typing_extensions import Literal
 
 from .exceptions.exceptions import NotSerializableException
+from datetime import datetime
+
+DATE_FORMATS = Literal["iso8601", "rfc2822"]
+HANDLE_CYCLES = Literal["error", "ignore", "replace"]
 
 class JsonSerializer:
     """A class for serializing and deserializing objects."""
@@ -14,17 +22,17 @@ class JsonSerializer:
         - options (dict): Optional dictionary with settings.
         """
 
-        self._options = options if options else {}
-        self._date_format = self._options.get("date_format", "iso8601")
-        self._encoding = self._options.get("encoding", "utf-8")
-        self._ignore_errors = self._options.get("ignore_errors", {})
-        self._custom_types = self._options.get("custom_types", {})
-        self._transform_rules = self._options.get("transform_rules", {})
-        self._indent = self._options.get("indent", None)
+        self._options: Dict[str, Any] = options if options else {}
+
+        self._date_format: Union[DATE_FORMATS, str] = self._options.get("date_format", "iso8601")
+        self._encoding: str = self._options.get("encoding", "utf-8")
+        self._ignore_errors: List[Exception] = self._options.get("ignore_errors", [])
+        self._transform_rules: Dict[str, Any] = self._options.get("transform_rules", {})
+        self._indent: int = self._options.get("indent", None)
         self._include_fields: List[Dict[str, Any]] = self._options.get("include_fields", [])
         self._exclude_fields: List[Dict[str, Any]] = self._options.get("exclude_fields", [])
-        self._handle_cycles = self._options.get("handle_cycles", "error")
-
+        self._handle_cycles: HANDLE_CYCLES = self._options.get("handle_cycles", "error")
+    
     def serialize(self, obj: object) -> str:
         """
         Converting an object to a JSON string.
@@ -39,9 +47,14 @@ class JsonSerializer:
             obj = self._include_fields_to_obj(obj)
             obj = self._exclude_fields_to_obj(obj)
 
+            try:
+                for key, value in obj.__dict__.items():
+                    obj.__dict__[key] = self._change_date_format(value)
+            except ValueError: pass
+
             return json.dumps(obj.__dict__, indent=self._indent)
         
-        self.handle_error(NotSerializableException)
+        self._handle_error(NotSerializableException)
     
     def deserialize(self, json_str: str, cls: type) -> object:
         """
@@ -63,7 +76,7 @@ class JsonSerializer:
 
             return obj
         
-        self.handle_error(NotSerializableException)
+        self._handle_error(NotSerializableException)
     
     def serialize_to_file(self, obj: object, file_path: str):
         """
@@ -77,10 +90,15 @@ class JsonSerializer:
             obj = self._include_fields_to_obj(obj)
             obj = self._exclude_fields_to_obj(obj)
 
+            try:
+                for key, value in obj.__dict__.items():
+                    obj.__dict__[key] = self._change_date_format(value)
+            except ValueError: pass
+
             with open(file_path, 'w', encoding=self._encoding) as json_file:
                 json.dump(obj.__dict__, json_file, indent=self._indent)
         else:
-            self.handle_error(NotSerializableException)
+            self._handle_error(NotSerializableException)
 
     def deserialize_from_file(self, file_path: str, cls: type) -> object:
         """
@@ -103,27 +121,7 @@ class JsonSerializer:
 
             return obj
         
-        self.handle_error(NotSerializableException)
-    
-    def register_custom_type(self, cls: type, serializer: callable):
-        """
-        Registers a custom type for specific serialization and deserialization.
-
-        Parameters:
-        - cls (type): Class type.
-        - serializer (callable): Custom serializer function.
-        """
-        self._custom_types[cls] = serializer
-
-    def handle_error(self, error: Exception):
-        """
-        Handling and logging errors that occur during serialization and deserialization.
-
-        Parameters:
-        - error (Exception): Error to be handled.
-        """
-        if error not in self._ignore_errors:
-            raise error
+        self._handle_error(NotSerializableException)
     
     def is_serializable(self, obj: object) -> bool:
         """
@@ -145,6 +143,22 @@ class JsonSerializer:
         - dict: Dictionary of options.
         """
         return self._options
+    
+    def _change_date_format(self, date_str: Union[str, datetime]) -> datetime:
+        if self._date_format == "iso8601":
+            return datetime.fromisoformat(date_str)
+        elif self._date_format == "rfs2822":
+            return datetime.strptime(date_str, "%a, %d %b %Y %H:%M:%S +0000")
+
+    def _handle_error(self, error: Exception):
+        """
+        Handling and logging errors that occur during serialization and deserialization.
+
+        Parameters:
+        - error (Exception): Error to be handled.
+        """
+        if error not in self._ignore_errors:
+            raise error
     
     def _include_fields_to_obj(self, obj: object) -> object:
         """
