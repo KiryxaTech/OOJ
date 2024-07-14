@@ -1,15 +1,15 @@
 import json
-from typing import Any, List, Dict, Union
+from typing import Any, List, Dict
 try:
     from typing import Literal
 except:
     from typing_extensions import Literal
 
 from .exceptions.exceptions import NotSerializableException, CyclicFieldError
-from datetime import datetime
 
-DATE_FORMATS = Literal["iso8601", "rfc2822"]
+
 HANDLE_CYCLES = Literal["error", "ignore", "replace"]
+
 
 class JsonSerializer:
     """A class for serializing and deserializing objects."""
@@ -48,11 +48,6 @@ class JsonSerializer:
             obj = self._exclude_fields_to_obj(obj)
             obj = self._handling_cycling_fields(obj)
 
-            try:
-                for key, value in obj.__dict__.items():
-                    obj.__dict__[key] = self._change_date_format(value)
-            except ValueError: pass
-
             return json.dumps(obj.__dict__, indent=self._indent)
         
         self._handle_error(NotSerializableException)
@@ -69,7 +64,7 @@ class JsonSerializer:
         - object: Deserialized object.
         """
         if self.is_serializable(cls):
-            data = json_str.__dict__
+            data = json.loads(json_str)
 
             obj = cls.__new__(cls)
             for name, value in data.items():
@@ -205,9 +200,8 @@ class JsonSerializer:
     def _apply_transform_rules(self, obj: object) -> object:
         if self.is_serializable(obj):
 
-            # Исправлена data -> obj
-            for key, value in obj.items():
-                obj.__dict__[key] = self._transform_rules[key](obj.__dict__[key])
+            for key, value in obj.__dict__.items():
+                obj.__dict__[key] = self._transform_rules.get(key, value)
 
                 return obj
         
