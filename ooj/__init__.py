@@ -12,4 +12,4 @@ WRITE_MODE = 'w'
 
 from .json_file import JsonFile
 from .json_serializer import JsonSerializer
-from .exceptions.errors import NotSerializableException, CyclicFieldError
+from .exceptions.exceptions import NotSerializableException, CyclicFieldError

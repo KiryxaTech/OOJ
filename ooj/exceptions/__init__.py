@@ -1,1 +1,1 @@
-from .errors import NotSerializableException, CyclicFieldError
+from .exceptions import NotSerializableException, CyclicFieldError
