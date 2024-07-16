@@ -5,95 +5,129 @@
 :copyright: (c) 2024 KiryxaTech
 """
 import json
+from typing import Any, Union, Dict, List, Optional, overload
+import os
 from pathlib import Path
-from typing import Union, Dict
-
 
 class JsonFile:
-    def __init__(self, file_path: Union[str, Path], encoding: str = 'utf-8'):
-        self._path = file_path
+    def __init__(self,
+                 file_path: Union[str, Path],
+                 encoding: Optional[str] = "utf-8",
+                 indent: Optional[int] = 4,
+                 ignore_errors: Optional[List[Exception]] = None):
+        
+        self._file_path = file_path
         self._encoding = encoding
-        self._dict = {}
+        self._indent = indent
 
-        self._update_dict()
-
-    @property
-    def path(self):
-        return self._path
+        self.create_if_not_exists()
 
     @property
-    def encoding(self):
-        return self._encoding
+    def file_path(self):
+        return self._file_path
 
-    def read(self) -> dict:
-        with open(self._path, 'r', encoding=self._encoding) as json_file:
-            return json.load(json_file)
+    @property
+    def exists(self) -> bool:
+        return os.path.exists(self._file_path)
 
-    def write(self, data: dict):
-        with open(self._path, 'w', encoding=self._encoding) as json_file:
-            json.dump(data, json_file, indent=4)
+    def create(self):
+        dirs = str(self._file_path).split("\\")[0:-1]
+        dirs_path = "\\".join(dirs)
+        if not os.path.exists(dirs_path):
+            os.mkdir(dirs_path)
 
-    def add(self, value, *keys):
-        d = self._dict
-        for key in keys[:-1]:
-            if key not in d or not isinstance(d[key], dict):
-                d[key] = {}
-            d = d[key]
+        with open(self._file_path, 'w', encoding=self._encoding) as f:
+            json.dump({}, f)
 
-        d[keys[-1]] = value
+    def create_if_not_exists(self):
+        if not os.path.exists(self._file_path):
+            self.create()
 
-        self._push_dict_changes()
-        self._update_dict()
+    def clear(self):
+        self.write({})
 
-    def remove(self, *keys):
-        d = self._dict
-        for key in keys[:-1]:
-            if key in d and isinstance(d[key], dict):
-                d = d[key]
+    def delete(self):
+        os.remove(self._file_path)
+
+    def write(self, data: Dict):
+        with open(self._file_path, 'w', encoding=self._encoding) as f:
+            json.dump(data, f, indent=self._indent)
+
+    def read(self) -> Dict:
+        with open(self._file_path, 'r', encoding=self._encoding) as f:
+            return json.load(f)
+
+    @overload
+    def set_value(self, key: str, value) -> None: ...
+
+    @overload
+    def set_value(self, keys: List[str], value) -> None: ...
+
+    def set_value(self, keys_path: Union[List[str], str], value: Any) -> None:
+        data = self.read()
+
+        def recursive_set(keys, data, value):
+            key = keys[0]
+            if len(keys) == 1:
+                data[key] = value
             else:
-                return
+                if key not in data or not isinstance(data[key], dict):
+                    data[key] = {}
+                recursive_set(keys[1:], data[key], value)
 
-        if keys[-1] in d:
-            del d[keys[-1]]
-
-        self._push_dict_changes()
-        self._update_dict()
-
-    def union(self, file_or_dict: Union['JsonFile', Dict]):
-        union_dict = self._dict
-
-        if isinstance(file_or_dict, JsonFile):
-            file_or_dict = file_or_dict.read()
-        if isinstance(file_or_dict, Dict):
-            union_dict.update(file_or_dict)
-            self._push_dict_changes()
-            self._update_dict()
-
-        return union_dict
-
-    def intersect(self, file_or_dict: Union['JsonFile', Dict]):
-        if isinstance(file_or_dict, JsonFile):
-            file_or_dict = file_or_dict.read()
+        if isinstance(keys_path, str):
+            data[keys_path] = value
+        elif isinstance(keys_path, list):
+            if keys_path[0] not in data or not isinstance(data[keys_path[0]], dict):
+                data[keys_path[0]] = {}
+            recursive_set(keys_path[1:], data[keys_path[0]], value)
         
-        intersect_dict = {}
-        for key in file_or_dict:
-            if key in self._dict:
-                intersect_dict[key] = self.read()[key]
-        
-        return intersect_dict
+        self.write(data)
+    
+    @overload
+    def get_value(self, key: str) -> Any: ...
 
-    def select(self, select_list):
-        select_dict = {}
+    @overload
+    def get_value(self, keys: List[str]) -> Any: ...
 
-        for key, value in self._dict.items():
-            if value in select_list:
-                select_dict[key] = value
+    def get_value(self, keys_path: Union[List[str], str]) -> Any:
+        data = self.read()
 
-        return select_dict
+        if isinstance(keys_path, str):
+            return data[keys_path]
 
+        for key in keys_path[:-1]:
+            if key in data and isinstance(data[key], dict):
+                data = data[key]
+            else:
+                raise KeyError(f"Key '{key}' not found or is not a dictionary.")
+                
+        if keys_path[-1] in data:
+            return data[keys_path[-1]]
+        else:
+            raise KeyError(f"Key '{keys_path[-1]}' not found.")
 
-    def _update_dict(self):
-        self._dict = self.read()
+    @overload
+    def remove_key(self, key: str) -> None: ...
 
-    def _push_dict_changes(self):
-        self.write(self._dict)
+    @overload
+    def remove_key(self, keys: List[str]) -> None: ...
+
+    def remove_key(self, keys_path: Union[List[str], str]):
+        data = self.read()
+            
+        if isinstance(keys_path, str):
+            del data[keys_path]
+        elif isinstance(keys_path, list):
+            for key in keys_path[:-1]:
+                if key in data and isinstance(data[key], dict):
+                    data = data[key]
+                else:
+                    raise KeyError(f"Key '{key}' not found or is not a dictionary.")
+            
+            if keys_path[-1] in data:
+                del data[keys_path[-1]]
+            else:
+                raise KeyError(f"Key '{keys_path[-1]}' not found.")
+
+        self.write(data)
