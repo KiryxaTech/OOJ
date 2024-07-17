@@ -9,6 +9,7 @@ from typing import Any, Union, Dict, List, Optional, overload
 import os
 from pathlib import Path
 
+
 class JsonFile:
     def __init__(self,
                  file_path: Union[str, Path],
@@ -131,3 +132,30 @@ class JsonFile:
                 raise KeyError(f"Key '{keys_path[-1]}' not found.")
 
         self.write(data)
+
+    @overload
+    @classmethod
+    def select(self, file: 'JsonFile', range_: range) -> 'JsonFile': ...
+
+    @overload
+    @classmethod
+    def select(self, dict_: Dict[str, Any], range_: range) -> Dict[str, Any]: ... 
+
+    @classmethod
+    def select(self, file_or_dict: Union['JsonFile', Dict[str, Any]], range_: range) -> Union['JsonFile', Dict[str, Any]]:
+        if isinstance(file_or_dict, JsonFile):
+            data: dict = file_or_dict.read()
+        elif isinstance(file_or_dict, Dict):
+            data = file_or_dict
+        else:
+            raise TypeError("file_or_dict must be an instance of 'JsonFile' or a dictionary.")
+
+        for i in range_:
+            for key, value in data.items():
+                if i == data[key]:
+                    data[key] = value
+
+        if isinstance(file_or_dict, JsonFile):
+            file_or_dict.write(data)
+            return file_or_dict
+        return data

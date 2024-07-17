@@ -69,3 +69,34 @@ class TestJsonFile:
         file.remove_key(keys_path)
         with pytest.raises(KeyError):
             file.get_value(keys_path)
+
+    @pytest.mark.parametrize(
+        "file_or_dict, range_",
+        [
+            (JsonFile(BASE_PATH / 'select.json'), range(0, 10)),
+            (
+                {"key1": 0, "key2": 12, "key3": -8,
+                "key4": 4, "key5": 2, "key6": -5,
+                "key7": -3, "key8": 7, "key9": -84,
+                "key10": 9},
+                range(-10, 0)
+            )
+        ]
+    )
+    def test_select(self, file_or_dict, range_):
+        data = JsonFile.select(file_or_dict, range_)
+
+        keys = []
+        if isinstance(data, JsonFile):
+            for key, value in data.read().items():
+                if value in range_:
+                    keys.append(key)
+
+            assert data.read()[keys[0]] in range_
+
+        elif isinstance(data, dict):
+            for key, value in data.items():
+                if value in range_:
+                    keys.append(key)
+
+            assert data[keys[0]] in range_
