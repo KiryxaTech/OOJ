@@ -1,7 +1,7 @@
 <div align="center">
     <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="docs/images/libDarkImage.png">
-        <img src="./docs/images/libLightImage.png">
+        <source media="(prefers-color-scheme: dark)" srcset="doc/images/libDarkImage.png">
+        <img src="./doc/images/libLightImage.png">
     </picture>
 
 ![PyPI](https://img.shields.io/pypi/v/ooj)
@@ -70,6 +70,7 @@ data = {
  "3": 9
 }
 
+my_file.write(data)
 selected_keys_dict = my_file.select(range(0, 10))
 print(selected_keys_dict)
 
