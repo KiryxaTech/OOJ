@@ -22,39 +22,31 @@ class TestJsonFile:
         assert file_path.exists()
 
     @pytest.mark.parametrize(
-        "file_path",
-        [
-            BASE_PATH / "delete.json"
-        ]
-    )
-    def test_delete(self, file_path):
-        file = JsonFile(file_path)
-        file.delete()
-        assert not file_path.exists()
-
-    @pytest.mark.parametrize(
         "keys_path, value",
         [
             ("key_1", "value_1"),
-            (["key_2", "nested_key_2"], "value_2"),
-            ("new_key", "new_value")
+            (["key_2", "nested_key_2"], "value"),
+            ("new_key", "value")
         ]
     )
-    def test_set_value(self, keys_path, value):
-        file = JsonFile(BASE_PATH / "set_value.json")
+    def test_set_and_get_value(self, keys_path, value):
+        file = JsonFile(BASE_PATH / "set_and_get_value.json")
         file.set_value(keys_path, value)
         assert file.get_value(keys_path) == value
 
     @pytest.mark.parametrize(
-        "keys_path, expected_value",
+        "keys_path",
         [
-            ("key", "value"),
-            (["keys", "nested_key"], "nested_value")
+            "key",
+            ["keys", "nested_key"]
         ]
     )
-    def test_get_value(self, keys_path, expected_value):
-        file = JsonFile(BASE_PATH / "get_value.json")
-        assert file.get_value(keys_path) == expected_value
+    def test_remove_key(self, keys_path):
+        file = JsonFile(BASE_PATH / "remove_key.json")
+        file.set_value(keys_path, "dummy_value")
+        file.remove_key(keys_path)
+        with pytest.raises(KeyError):
+            file.get_value(keys_path)
 
     @pytest.mark.parametrize(
         "keys_path",
