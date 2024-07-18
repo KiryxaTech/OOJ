@@ -3,7 +3,6 @@ import pytest
 from pathlib import Path
 from ooj.json_file import JsonFile
 
-
 # Base path from test JSON files
 BASE_PATH = Path('tests/files/test_json_files')
 
@@ -92,3 +91,68 @@ class TestJsonFile:
                     keys.append(key)
 
             assert data[keys[0]] in range_
+
+    @pytest.mark.parametrize(
+        "file_or_dict_1, file_or_dict_2, expected_result",
+        [
+            # Test union JsonFiles
+            (
+                JsonFile(BASE_PATH / "union/union_1.json"),
+                JsonFile(BASE_PATH / "union/union_2.json"),
+
+                JsonFile(BASE_PATH / "union/union_1.json").read() |\
+                JsonFile(BASE_PATH / "union/union_2.json").read()
+            ),
+            # Test union JsonFile & dict 
+            (
+                JsonFile(BASE_PATH / "union/union_1.json"),
+                {"key_1": "value_1", "key_3": "value_3", "key_8": "value_8"},
+
+                JsonFile(BASE_PATH / "union/union_1.json").read() | {"key_1": "value_1", "key_3": "value_3", "key_8": "value_8"}
+            ),
+            # Test union dicts
+            (
+                {"key_1": "value_1", "key_2": "value_2", "key_3": "value_3"},
+                {"key_1": "value_1", "key_3": "value_3", "key_8": "value_8"},
+
+                {"key_1": "value_1", "key_2": "value_2", "key_3": "value_3"} |\
+                {"key_1": "value_1", "key_3": "value_3", "key_8": "value_8"}
+            )
+        ]
+    )
+    def test_union(self, file_or_dict_1: JsonFile, file_or_dict_2, expected_result):
+        assert JsonFile.union(file_or_dict_1, file_or_dict_2) == expected_result
+
+    @pytest.mark.parametrize(
+        "file_or_dict_1, file_or_dict_2, expected_result",
+        [
+            # Test intersect JsonFiles
+            (
+                JsonFile(BASE_PATH / "intersect/intersect_1.json"),
+                JsonFile(BASE_PATH / "intersect/intersect_2.json"),
+
+                dict(JsonFile(BASE_PATH / "intersect/intersect_1.json").read().items() &\
+                JsonFile(BASE_PATH / "intersect/intersect_2.json").read().items())
+                
+            ),
+            # Test intersect JsonFile & dict
+            (
+                JsonFile(BASE_PATH / "intersect/intersect_1.json"),
+                {"key_1": "value_1", "key_3": "value_3", "key_8": "value_8"},
+
+                dict(JsonFile(BASE_PATH / "intersect/intersect_1.json").read().items() &\
+                    {"key_1": "value_1", "key_3": "value_3", "key_8": "value_8"}.items())
+            ),
+            # Test intersect dicts
+            (
+                {"key_1": "value_1", "key_2": "value_2", "key_3": "value_3"},
+                {"key_1": "value_1", "key_3": "value_3", "key_8": "value_8"},
+
+                dict({"key_1": "value_1", "key_2": "value_2", "key_3": "value_3"}.items() &\
+                {"key_1": "value_1", "key_3": "value_3", "key_8": "value_8"}.items())
+            )
+        ]
+    )
+    def test_intersect(self, file_or_dict_1, file_or_dict_2, expected_result):
+        print(JsonFile.intersect(file_or_dict_1, file_or_dict_2))
+        assert JsonFile.intersect(file_or_dict_1, file_or_dict_2) == expected_result

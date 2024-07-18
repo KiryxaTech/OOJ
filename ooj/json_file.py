@@ -138,6 +138,22 @@ class JsonFile:
 
         return data
     
+    @overload
+    @classmethod
+    def union(cls, dict_1: Dict[str, Any], dict_2: Dict[str, Any]) -> Dict[str, Any]: ...
+
+    @overload
+    @classmethod
+    def union(cls, file_1: 'JsonFile', file_2: 'JsonFile') -> Dict[str, Any]: ...
+
+    @overload
+    @classmethod
+    def union(cls, dict: Dict[str, Any], file: 'JsonFile') -> Dict[str, Any]: ...
+
+    @overload
+    @classmethod
+    def union(cls, file: 'JsonFile', dict: Dict[str, Any]) -> Dict[str, Any]: ...
+
     @classmethod
     def union(cls,
               file_or_dict_1: Union['JsonFile', Dict[str, Any]],
@@ -148,6 +164,33 @@ class JsonFile:
         data_2 = cls._get_data(file_or_dict_2)
 
         return data_1 | data_2
+    
+    @overload
+    @classmethod
+    def intersect(cls, dict_1: Dict[str, Any], dict_2: Dict[str, Any]) -> Dict[str, Any]: ...
+
+    @overload
+    @classmethod
+    def intersect(cls, file_1: 'JsonFile', file_2: 'JsonFile') -> Dict[str, Any]: ...
+
+    @overload
+    @classmethod
+    def intersect(cls, dict: Dict[str, Any], file: 'JsonFile') -> Dict[str, Any]: ...
+
+    @overload
+    @classmethod
+    def intersect(cls, file: 'JsonFile', dict: Dict[str, Any]) -> Dict[str, Any]: ...
+
+    @classmethod
+    def intersect(cls,
+                  file_or_dict_1: Union['JsonFile', Dict[str, Any]],
+                  file_or_dict_2: Union['JsonFile', Dict[str, Any]],
+                  ) -> Dict[str, Any]:
+        
+        data_1 = cls._get_data(file_or_dict_1)
+        data_2 = cls._get_data(file_or_dict_2)
+
+        return dict(data_1.items() & data_2.items())
 
     @classmethod
     def _get_data(cls, file_or_dict: Union['JsonFile', Dict[str, Any]]) -> Dict[str, Any]:
