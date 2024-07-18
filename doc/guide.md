@@ -44,10 +44,10 @@ data = file.read()
 
 ## Add key
 ```python
-file.add(value, *keys)
+file.set_value(keys, value)
 ```
 
 ## Remove key
 ```python
-file.remove(*keys)
+file.delete_key(keys)
 ```

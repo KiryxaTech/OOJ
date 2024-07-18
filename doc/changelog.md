@@ -1,7 +1,7 @@
 # Change Log
 
 ## Version levels
-`[Release].[PreRelease].[NewFeatues].[BugFix]`
+`[Release].[Prewiev].[Beta]`
 
 ## Versions
 
@@ -31,8 +31,6 @@ Added the ability to nest when adding or deleting an object. A helper class call
 
 ### 0.0.3.6
 - Fixed to bug imports.
-
-## Soon
 
 ### 0.0.4.0
 - Improvement of current library classes.
