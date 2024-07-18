@@ -1,11 +1,13 @@
 import json
-from typing import Any, List, Dict
+from typing import Any, List, Dict, Union, overload
 try:
     from typing import Literal
 except:
     from typing_extensions import Literal
 
 from .exceptions.exceptions import NotSerializableException, CyclicFieldError
+
+from .json_file import JsonFile
 
 
 HANDLE_CYCLES = Literal["error", "ignore", "replace"]
@@ -74,7 +76,13 @@ class JsonSerializer:
         
         self._handle_error(NotSerializableException)
     
-    def serialize_to_file(self, obj: object, file_path: str):
+    @overload
+    def serealize_to_file(self, obj: object, file_path: str) -> None: ...
+
+    @overload
+    def serealize_to_file(self, obj: object, json_file: JsonFile) -> None: ...
+
+    def serialize_to_file(self, obj: object, file_path_or_json_file: Union[str, JsonFile]) -> None:
         """
         Saving a JSON representation of an object to a file.
 
@@ -88,12 +96,15 @@ class JsonSerializer:
             obj = self._apply_transform_rules(obj)
             obj = self._handling_cycling_fields(obj)
 
-            with open(file_path, 'w', encoding=self._encoding) as json_file:
-                json.dump(obj.__dict__, json_file, indent=self._indent)
+            if isinstance(file_path_or_json_file, str):
+                with open(file_path_or_json_file, 'w', encoding=self._encoding) as json_file:
+                    json.dump(obj.__dict__, json_file, indent=self._indent)
+            elif isinstance(file_path_or_json_file, JsonFile):
+                file_path_or_json_file.write(obj.__dict__)
         else:
             self._handle_error(NotSerializableException)
 
-    def deserialize_from_file(self, file_path: str, cls: type) -> object:
+    def deserialize_from_file(self, file_path_or_json_file: Union[str, JsonFile], cls: type) -> object:
         """
         Loading an object from a JSON file.
 
@@ -105,8 +116,11 @@ class JsonSerializer:
         - object: Deserialized object.
         """
         if self.is_serializable(cls):
-            with open(file_path, 'r', encoding=self._encoding) as serealize_data_file:
-                data = json.load(serealize_data_file)
+            if isinstance(file_path_or_json_file, str):
+                with open(file_path_or_json_file, 'r', encoding=self._encoding) as serealize_data_file:
+                    data = json.load(serealize_data_file)
+            elif isinstance(file_path_or_json_file, JsonFile):
+                data = file_path_or_json_file.read()
 
             obj = cls.__new__(cls)
             for name, value in data.items():
