@@ -1,5 +1,5 @@
 import json
-from typing import Any, List, Dict, Union, overload
+from typing import Any, List, Dict, Optional, Union, overload
 try:
     from typing import Literal
 except:
@@ -16,7 +16,14 @@ HANDLE_CYCLES = Literal["error", "ignore", "replace"]
 class JsonSerializer:
     """A class for serializing and deserializing objects."""
 
-    def __init__(self, options: dict = None):
+    def __init__(self,
+                 encoding: Optional[str] = "utf-8",
+                 ignore_errors: Optional[List[Exception]] = [],
+                 transform_rules: Optional[Dict[str, Any]] = {},
+                 indent: Optional[int] = 4,
+                 include_fields: Optional[List[Dict[str, Any]]] = [],
+                 exclude_fields: Optional[List[Dict[str, Any]]] = [],
+                 handle_cycles: Optional[HANDLE_CYCLES] = "error") -> None:
         """
         Initializing serialization settings.
 
@@ -24,15 +31,23 @@ class JsonSerializer:
         - options (dict): Optional dictionary with settings.
         """
 
-        self._options: Dict[str, Any] = options if options else {}
+        self._options: Dict[str, Any] = {
+            "encoding": encoding,
+            "ignore_errors": ignore_errors,
+            "transform_rules": transform_rules,
+            "indent": indent,
+            "include_fields": include_fields,
+            "exclude_fields": exclude_fields,
+            "handle_cycles": handle_cycles
+        }
 
-        self._encoding: str = self._options.get("encoding", "utf-8")
-        self._ignore_errors: List[Exception] = self._options.get("ignore_errors", [])
-        self._transform_rules: Dict[str, Any] = self._options.get("transform_rules", {})
-        self._indent: int = self._options.get("indent", None)
-        self._include_fields: List[Dict[str, Any]] = self._options.get("include_fields", [])
-        self._exclude_fields: List[Dict[str, Any]] = self._options.get("exclude_fields", [])
-        self._handle_cycles: HANDLE_CYCLES = self._options.get("handle_cycles", "error")
+        self._encoding: str = encoding
+        self._ignore_errors: List[Exception] = ignore_errors
+        self._transform_rules: Dict[str, Any] = transform_rules
+        self._indent: int = indent
+        self._include_fields: List[Dict[str, Any]] = include_fields
+        self._exclude_fields: List[Dict[str, Any]] = exclude_fields
+        self._handle_cycles: HANDLE_CYCLES = handle_cycles
     
     def serialize(self, obj: object) -> str:
         """
