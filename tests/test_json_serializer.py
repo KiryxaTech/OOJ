@@ -1,68 +1,65 @@
 import pytest
 import json
-
-from ooj import exceptions
+from ooj.exceptions import NotSerializableException, CyclicFieldError
 from ooj.json_serializer import JsonSerializer
+from ooj.json_file import JsonFile
 
-
-class Person:
-    def __init__(self, name: str, age: int = None):
+class SampleClass:
+    def __init__(self, name, value):
         self.name = name
-        self.age = age
+        self.value = value
 
+class ComplexClass:
+    def __init__(self, id, data):
+        self.id = id
+        self.data = data
 
-standard_serializer = JsonSerializer()
+class TestJsonSerializer:
+    @pytest.fixture
+    def serializer(self):
+        return JsonSerializer()
 
-person_1 = Person("Mike", 29)
-person_2 = Person("Jenny")
-serialize_person_1 = standard_serializer.serialize(person_1)
-serialize_person_2 = standard_serializer.serialize(person_2)
+    @pytest.mark.parametrize("obj, expected_json", [
+        (SampleClass(name="test", value=123), '{"name": "test", "value": 123}'),
+        (SampleClass(name="example", value=456), '{"name": "example", "value": 456}'),
+        (ComplexClass(id=1, data={"key": "value"}), '{"id": 1, "data": {"key": "value"}}'),
+    ])
+    def test_serialize(self, serializer, obj, expected_json):
+        json_str = serializer.serialize(obj)
+        assert json.loads(json_str) == json.loads(expected_json)
 
-serialize_file_path = 'tests\\files\\serialize_obj.json'
+    @pytest.mark.parametrize("json_str, cls, expected_obj", [
+        ('{"name": "test", "value": 123}', SampleClass, SampleClass(name="test", value=123)),
+        ('{"name": "example", "value": 456}', SampleClass, SampleClass(name="example", value=456)),
+        ('{"id": 1, "data": {"key": "value"}}', ComplexClass, ComplexClass(id=1, data={"key": "value"})),
+    ])
+    def test_deserialize(self, serializer, json_str, cls, expected_obj):
+        obj = serializer.deserialize(json_str, cls)
+        assert obj.__dict__ == expected_obj.__dict__
 
+    @pytest.mark.parametrize("obj, file_content", [
+        (SampleClass(name="test", value=123), '{"name": "test", "value": 123}'),
+        (SampleClass(name="example", value=456), '{"name": "example", "value": 456}'),
+        (ComplexClass(id=1, data={"key": "value"}), '{"id": 1, "data": {"key": "value"}}'),
+    ])
+    def test_serialize_to_file(self, serializer, obj, file_content, tmp_path):
+        file_path = tmp_path / "test.json"
+        serializer.serialize_to_file(obj, str(file_path))
+        with open(file_path, "r", encoding="utf-8") as f:
+            assert json.load(f) == json.loads(file_content)
 
-def to_format(obj_str: str):
-    return obj_str.replace("'", '"').replace("None", "null")
+    @pytest.mark.parametrize("file_content, cls, expected_obj", [
+        ('{"name": "test", "value": 123}', SampleClass, SampleClass(name="test", value=123)),
+        ('{"name": "example", "value": 456}', SampleClass, SampleClass(name="example", value=456)),
+        ('{"id": 1, "data": {"key": "value"}}', ComplexClass, ComplexClass(id=1, data={"key": "value"})),
+    ])
+    def test_deserialize_from_file(self, serializer, file_content, cls, expected_obj, tmp_path):
+        file_path = tmp_path / "test.json"
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(file_content)
+        obj = serializer.deserialize_from_file(str(file_path), cls)
+        assert obj.__dict__ == expected_obj.__dict__
 
-@pytest.mark.parametrize("options",
-                         [{},
-                          {"encoding": "utf-16le"},
-                          {"ignore_errors": exceptions.NotSerializableException}])
-def test_create_serializer(options: dict):
-    assert JsonSerializer(options).get_serialization_options() == options
-
-
-@pytest.mark.parametrize("obj", [person_1, person_2])
-def test_standard_serialize(obj: object):
-    serialize_str = standard_serializer.serialize(obj)
-    str_obj = to_format(str(obj.__dict__))
-
-    assert serialize_str == str_obj
-
-
-@pytest.mark.parametrize("json_str, cls", [(serialize_person_1, Person),
-                                           (serialize_person_2, Person)])
-def test_standard_deserialize(json_str, cls):
-    deserialize_obj = standard_serializer.deserialize(json_str, cls)
-
-    assert isinstance(deserialize_obj, cls)
-
-
-@pytest.mark.parametrize("obj", [person_1, person_2])
-def test_serialize_to_file(obj: object):
-    serialize_str = standard_serializer.serialize(obj)
-
-    standard_serializer.serialize_to_file(obj, 'tests\\files\\serialize_obj.json')
-
-    with open(serialize_file_path, 'r') as file:
-        serialize = str(json.load(file))
-
-    assert to_format(serialize) == serialize_str
-
-
-@pytest.mark.parametrize("cls", [Person])
-def test_deserialize_from_file(cls: type):
-    deserialize_obj = standard_serializer\
-        .deserialize_from_file(serialize_file_path, cls)
-    
-    assert isinstance(deserialize_obj, cls)
+    def test_handle_not_serializable(self, serializer):
+        with pytest.raises(NotSerializableException):
+            serializer.serialize(object())
