@@ -4,6 +4,7 @@ import re
 import requests
 import json
 from typing import Union, Optional, List, Dict
+from pathlib import Path
 
 from . import JsonBaseClass, JsonFile
 
