@@ -154,5 +154,4 @@ class TestJsonFile:
         ]
     )
     def test_intersect(self, file_or_dict_1, file_or_dict_2, expected_result):
-        print(JsonFile.intersect(file_or_dict_1, file_or_dict_2))
         assert JsonFile.intersect(file_or_dict_1, file_or_dict_2) == expected_result
