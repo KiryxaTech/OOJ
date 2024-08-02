@@ -3,14 +3,12 @@
 import re
 import requests
 import json
-from collections import UserDict
-from pathlib import Path
 from typing import Union, Optional, List, Dict
 
-from . import JsonFile
+from . import JsonBaseClass, JsonFile
 
 
-class JsonURL(UserDict):
+class JsonURL(JsonBaseClass):
     """
     A class to load JSON data from a URL and optionally save it to a file.
 
@@ -38,16 +36,18 @@ class JsonURL(UserDict):
             indent (Optional[int]): The indentation level for the JSON output. Defaults to 4.
             ignore_exceptions_list (Optional[List[Exception]]): A list of exceptions to ignore. Defaults to an empty list.
         """
-        super().__init__()
-
         self._url = url
-        self._output_file_path = output_file_path
-        self._encoding = encoding
-        self._indent = indent
-        self._ignore_exceptions_list = ignore_exceptions_list or []
-
-        self._data = None
         self._validate_url()
+
+        super().__init__(
+            data=None,
+            file_path=output_file_path,
+            encoding=encoding,
+            indent=indent,
+            ignore_exceptions_list=ignore_exceptions_list or []
+        )
+
+        self._data = self.load_from_url()
 
     def load_from_url(self) -> Dict:
         """
@@ -81,8 +81,8 @@ class JsonURL(UserDict):
         Args:
             data (Dict): The JSON data to be saved.
         """
-        if self._output_file_path:
-            with open(self._output_file_path, 'w', encoding=self._encoding) as f:
+        if self._file_path:
+            with open(self._file_path, 'w', encoding=self._encoding) as f:
                 json.dump(data, f, indent=self._indent)
 
     def to_json_file(self) -> JsonFile:
@@ -94,7 +94,7 @@ class JsonURL(UserDict):
         """
         json_file = JsonFile(
             data=self.load_from_url(),
-            save_path=self._output_file_path,
+            save_path=self._file_path,
             encoding=self._encoding,
             indent=self._indent,
             ignore_errors=self._ignore_exceptions_list
@@ -142,4 +142,4 @@ class JsonURL(UserDict):
         Returns:
             str: The JSON data as a string.
         """
-        return json.dumps(self.data, indent=self._indent, ensure_ascii=False)
+        return json.dumps(self._data, indent=self._indent, ensure_ascii=False)

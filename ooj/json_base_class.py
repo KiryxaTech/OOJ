@@ -6,17 +6,36 @@ from pathlib import Path
 
 
 class JsonBaseClass(UserDict):
+    """
+    A base class for handling JSON data with optional file operations.
+
+    Attributes:
+        data (Optional[Dict]): The JSON data.
+        file_path (Optional[Union[Path, str]]): The file path to save the JSON data.
+        encoding (Optional[str]): The encoding for the output file.
+        indent (Optional[int]): The indentation level for the JSON output.
+        ignore_exceptions_list (Optional[List[Exception]]): A list of exceptions to ignore.
+    """
+
     def __init__(self,
-                 data: Optional[Dict] = {},
+                 data: Optional[Dict] = None,
                  file_path: Optional[Union[Path, str]] = None,
                  encoding: Optional[str] = "utf-8",
                  indent: Optional[int] = 4,
-                 ignore_exceptions_list: Optional[List[Exception]] = []) -> None:
-        
-        super().__init__()
+                 ignore_exceptions_list: Optional[List[Exception]] = None) -> None:
+        """
+        Initializes the JsonBaseClass instance.
 
-        self._data = data
+        Args:
+            data (Optional[Dict]): The JSON data. Defaults to an empty dictionary.
+            file_path (Optional[Union[Path, str]]): The file path to save the JSON data.
+            encoding (Optional[str]): The encoding for the output file. Defaults to "utf-8".
+            indent (Optional[int]): The indentation level for the JSON output. Defaults to 4.
+            ignore_exceptions_list (Optional[List[Exception]]): A list of exceptions to ignore. Defaults to an empty list.
+        """
+        super().__init__()
+        self._data = data or {}
         self._file_path = file_path
         self._encoding = encoding
         self._indent = indent
-        self._ignore_exceptions_list = ignore_exceptions_list
+        self._ignore_exceptions_list = ignore_exceptions_list or []

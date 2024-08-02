@@ -10,6 +10,7 @@ READ_MODE = 'r'
 WRITE_MODE = 'w'
 
 
+from .json_base_class import JsonBaseClass
 from .json_file import JsonFile
 from .json_serializer import JsonSerializer
 from .exceptions.exceptions import NotSerializableException, CyclicFieldError
