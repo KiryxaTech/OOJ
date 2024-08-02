@@ -1,3 +1,5 @@
+# (c) KiryxaTech 2024. Apache License 2.0
+
 import re
 import requests
 import json
@@ -9,13 +11,33 @@ from . import JsonFile
 
 
 class JsonURL(UserDict):
+    """
+    A class to load JSON data from a URL and optionally save it to a file.
+
+    Attributes:
+        url (str): The URL to fetch JSON data from.
+        output_file_path (Optional[Union[Path, str]]): The file path to save the JSON data.
+        encoding (Optional[str]): The encoding for the output file.
+        indent (Optional[int]): The indentation level for the JSON output.
+        ignore_exceptions_list (Optional[List[Exception]]): A list of exceptions to ignore.
+    """
+
     def __init__(self,
                  url: str,
                  output_file_path: Optional[Union[Path, str]] = None,
                  encoding: Optional[str] = "utf-8",
                  indent: Optional[int] = 4,
                  ignore_exceptions_list: Optional[List[Exception]] = None):
-        
+        """
+        Initializes the JsonURL instance.
+
+        Args:
+            url (str): The URL to fetch JSON data from.
+            output_file_path (Optional[Union[Path, str]]): The file path to save the JSON data.
+            encoding (Optional[str]): The encoding for the output file. Defaults to "utf-8".
+            indent (Optional[int]): The indentation level for the JSON output. Defaults to 4.
+            ignore_exceptions_list (Optional[List[Exception]]): A list of exceptions to ignore. Defaults to an empty list.
+        """
         super().__init__()
 
         self._url = url
@@ -24,35 +46,54 @@ class JsonURL(UserDict):
         self._indent = indent
         self._ignore_exceptions_list = ignore_exceptions_list or []
 
-        self.__validate_url()
+        self._data = None
+        self._validate_url()
 
     def load_from_url(self) -> Dict:
+        """
+        Loads JSON data from the URL.
+
+        Returns:
+            Dict: The JSON data loaded from the URL.
+
+        Raises:
+            Exception: If an error occurs and it is not in the ignore exceptions list.
+        """
+        if self._data is not None:
+            return self._data
         try:
             response = requests.get(self._url)
             response.raise_for_status()
 
-            data = response.json()
-            self.dump_to_file(data)
+            self._data = response.json()
+            self._dump_to_file(self._data)
 
-            return data
+            return self._data
         except Exception as e:
-            self.__handle_exception(e)
-
-            self.dump_to_file({})
+            self._handle_exception(e)
+            self._dump_to_file({})
             return {}
 
-    def dump_to_file(self, data: Dict) -> None:
-        # Проверка и создание директорий
-        output_path = Path(self._output_file_path)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
+    def _dump_to_file(self, data: Dict) -> None:
+        """
+        Dumps JSON data to a file.
 
-        with open(output_path, 'w', encoding=self._encoding) as file:
-            json.dump(data, file, indent=self._indent)
+        Args:
+            data (Dict): The JSON data to be saved.
+        """
+        if self._output_file_path:
+            with open(self._output_file_path, 'w', encoding=self._encoding) as f:
+                json.dump(data, f, indent=self._indent)
 
     def to_json_file(self) -> JsonFile:
-        data = self.load_from_url()
+        """
+        Converts the JSON data to a JsonFile instance.
+
+        Returns:
+            JsonFile: An instance of JsonFile containing the JSON data.
+        """
         json_file = JsonFile(
-            data=data,
+            data=self.load_from_url(),
             save_path=self._output_file_path,
             encoding=self._encoding,
             indent=self._indent,
@@ -60,21 +101,45 @@ class JsonURL(UserDict):
         )
         return json_file
 
-    def __validate_url(self) -> None:
+    def _validate_url(self) -> None:
+        """
+        Validates the URL.
+
+        Raises:
+            ValueError: If the URL is invalid.
+        """
         regex = re.compile(
-            r'^(?:http|ftp)s?://' # http:// or https://
-            r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' # domain name
-            r'localhost|' # or localhost
-            r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|' # or IPv4
-            r'\[?[A-F0-9]*:[A-F0-9:]+\]?)' # or IPv6
+            r'^(?:http|ftp)s?://'  # http:// or https://
+            r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # domain name
+            r'localhost|'  # or localhost
+            r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|'  # or IPv4
+            r'\[?[A-F0-9]*:[A-F0-9:]+\]?)'  # or IPv6
             r'(?::\d+)?'
             r'(?:/?|[/?]\S+)$',
             re.IGNORECASE
         )
 
         if not re.match(regex, self._url):
-            self.__handle_exception(ValueError(f"Invalid URL: {self._url}"))
+            self._handle_exception(ValueError(f"Invalid URL: {self._url}"))
 
-    def __handle_exception(self, exception: Exception) -> None:
+    def _handle_exception(self, exception: Exception) -> None:
+        """
+        Handles exceptions based on the ignore exceptions list.
+
+        Args:
+            exception (Exception): The exception to handle.
+
+        Raises:
+            Exception: If the exception is not in the ignore exceptions list.
+        """
         if not any(isinstance(exception, exc) for exc in self._ignore_exceptions_list):
             raise exception
+
+    def __str__(self) -> str:
+        """
+        Returns the JSON data as a formatted string.
+
+        Returns:
+            str: The JSON data as a string.
+        """
+        return json.dumps(self.data, indent=self._indent, ensure_ascii=False)
