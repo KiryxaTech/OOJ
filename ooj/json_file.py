@@ -1,16 +1,14 @@
-"""
-:authors: KiryxaTech
-:license Apache License, Version 2.0, see LICENSE file
+# (c) KiryxaTech 2024. Apache License 2.0
 
-:copyright: (c) 2024 KiryxaTech
-"""
 import json
+import requests
 from typing import Any, Union, Dict, List, Optional
 from pathlib import Path
-from collections import UserDict
-import requests
 
-class JsonFile(UserDict):
+from . import JsonBaseClass
+
+
+class JsonFile(JsonBaseClass):
     def __init__(self,
                  data: Union[Dict[str, Any], str, Path],
                  save_path: Optional[Union[str, Path]] = None,
