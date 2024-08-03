@@ -1,5 +1,6 @@
 # (c) KiryxaTech 2024. Apache License 2.0
 
+import json
 from collections import UserDict
 from typing import Optional, Union, Dict, List
 from pathlib import Path
@@ -39,3 +40,30 @@ class JsonBaseClass(UserDict):
         self._encoding = encoding
         self._indent = indent
         self._ignore_exceptions_list = ignore_exceptions_list or []
+
+    def load(self):
+        try:
+            with open(self._file_path, 'r', encoding=self._encoding) as file:
+                return json.load(file)
+        except Exception as e:
+            self._handle_exception(e)
+
+    def dump(self, data):
+        try:
+            with open(self._file_path, 'w', encoding=self._encoding) as file:
+                return json.dump(file, data, indent=self._indent)
+        except Exception as e:
+            self._handle_exception(e)
+
+    def _handle_exception(self, exception: Exception) -> None:
+        """
+        Handles exceptions based on the ignore exceptions list.
+
+        Args:
+            exception (Exception): The exception to handle.
+
+        Raises:
+            Exception: If the exception is not in the ignore exceptions list.
+        """
+        if not any(isinstance(exception, exc) for exc in self._ignore_exceptions_list):
+            raise exception
