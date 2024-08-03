@@ -122,25 +122,3 @@ class JsonURL(JsonBaseClass):
 
         if not re.match(regex, self._url):
             self._handle_exception(ValueError(f"Invalid URL: {self._url}"))
-
-    def _handle_exception(self, exception: Exception) -> None:
-        """
-        Handles exceptions based on the ignore exceptions list.
-
-        Args:
-            exception (Exception): The exception to handle.
-
-        Raises:
-            Exception: If the exception is not in the ignore exceptions list.
-        """
-        if not any(isinstance(exception, exc) for exc in self._ignore_exceptions_list):
-            raise exception
-
-    def __str__(self) -> str:
-        """
-        Returns the JSON data as a formatted string.
-
-        Returns:
-            str: The JSON data as a string.
-        """
-        return json.dumps(self._data, indent=self._indent, ensure_ascii=False)

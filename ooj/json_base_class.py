@@ -1,12 +1,13 @@
 # (c) KiryxaTech 2024. Apache License 2.0
 
 import json
+from abc import ABC
 from collections import UserDict
 from typing import Optional, Union, Dict, List
 from pathlib import Path
 
 
-class JsonBaseClass(UserDict):
+class JsonBaseClass(ABC, UserDict):
     """
     A base class for handling JSON data with optional file operations.
 
@@ -40,6 +41,15 @@ class JsonBaseClass(UserDict):
         self._encoding = encoding
         self._indent = indent
         self._ignore_exceptions_list = ignore_exceptions_list or []
+
+    def __str__(self) -> str:
+        """
+        Returns the JSON data as a formatted string.
+
+        Returns:
+            str: The JSON data as a string.
+        """
+        return json.dumps(self._data, indent=self._indent, ensure_ascii=False)
 
     def load(self):
         try:
