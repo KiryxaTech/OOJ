@@ -83,7 +83,7 @@ You can serialize and deserialize objects.
 #### Creating a serializer
 ```python
 from ooj import JsonSerializer
-from ooj.excptions import NotSerializableError
+from ooj.exceptions import NotSerializableError
 
 # Options for serialization
 options = {
