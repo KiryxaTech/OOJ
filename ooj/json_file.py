@@ -1,7 +1,6 @@
 # (c) KiryxaTech 2024. Apache License 2.0
 
 import json
-import requests
 from typing import Any, Union, Dict, List, Optional
 from pathlib import Path
 
@@ -11,48 +10,47 @@ from .exceptions import FileExtensionException
 
 class JsonFile(JsonBaseClass):
     def __init__(self,
-                 data: Union[Dict[str, Any], str, Path],
-                 save_path: Optional[Union[str, Path]] = None,
-                 encoding: Optional[str] = "utf-8",
-                 indent: Optional[int] = 4,
-                 ignore_errors: Optional[List[Exception]] = None):
+                 fp: Union[str, Path],
+                 encoding: str = "utf-8",
+                 indent: int = 4,
+                 ignore_errors: List[Exception] = None):
         """
         Initialize JsonFile
 
-        :param data: Data to process (dict, file path, or URL)
-        :param save_path: Path to save data (if None, data is not saved)
+        :param fp: Path to save data (if None, data is not saved)
         :param encoding: Encoding for reading/writing files
         :param indent: Indentation for JSON formatting
         :param ignore_errors: List of exceptions to ignore during read/write operations
         """
         super().__init__()
         
-        self._save_path = Path(save_path) if save_path else None
+        self._fp = Path(fp)
         self._encoding = encoding
         self._indent = indent
         self.ignore_errors = ignore_errors or []
 
-        if not str(self._save_path).endswith(".json"):
+        if not str(self._fp).endswith(".json"):
             raise FileExtensionException(
                 f"The file {self.save_path} not JSON file."
             )
 
     @property
-    def save_path(self):
-        return self._save_path
+    def fp(self):
+        return self._fp
 
     @property
     def exists(self) -> bool:
-        return self._save_path.exists() if self._save_path else False
+        return self._fp.exists()
 
     def create(self):
-        if self._save_path:
-            self._save_path.parent.mkdir(parents=True, exist_ok=True)
-            self._save_path.touch()
+        if self._fp:
+            self._fp.parent.mkdir(parents=True, exist_ok=True)
+            self._fp.touch()
+
             self.write({})
 
     def create_if_not_exists(self):
-        if self._save_path and not self.exists():
+        if not self.exists():
             self.create()
 
     def clear(self):
@@ -60,13 +58,13 @@ class JsonFile(JsonBaseClass):
         self.write({})
 
     def delete(self):
-        if self._save_path:
-            self._save_path.unlink(missing_ok=True)
+        if self._fp:
+            self._fp.unlink(missing_ok=True)
 
     def write(self, data: Dict):
-        if self._save_path:
+        if self._fp:
             try:
-                with self._save_path.open('w', encoding=self._encoding) as f:
+                with self._fp.open('w', encoding=self._encoding) as f:
                     json.dump(data, f, indent=self._indent)
                 self.data = data
             except Exception as e:
@@ -77,7 +75,7 @@ class JsonFile(JsonBaseClass):
         if not self.exists:
             return {}
         try:
-            with self._save_path.open('r', encoding=self._encoding) as f:
+            with self._fp.open('r', encoding=self._encoding) as f:
                 return json.load(f)
         except Exception as e:
             if not self._ignore_exception(e):
