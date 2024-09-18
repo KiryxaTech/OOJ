@@ -1,25 +1,12 @@
 # Change Log
 
 ## Version levels
-`[Release].[Prewiev].[Beta]`
-
-## Soon...
-
-### v0.0.5
-#### Documentation
-1. The guide and help for the library will be updated.
-2. Update the library description.
-#### JsonFile
-1. The ability to create a JsonFIle object based on a URL and a dictionary will be added.
-2. A method will be added that allows you to move through file nesting levels.
-3. Search the entire JSON file for the key, including nested keys.
-#### JsonSerializer
-1. Make it easier to add options by adding arguments to the class.
-#### Tests & quality control
-1. Update all tests.
-2. Increased code quality control.
+`[Release].[Support].[BugFix]`
 
 ## Versions
+
+### v0.0.5
+- Fixed a bug with creating a file.
 
 ### v0.0.4
 - Improvement of current library classes.
