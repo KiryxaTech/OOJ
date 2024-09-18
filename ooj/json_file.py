@@ -6,6 +6,7 @@ from typing import Any, Union, Dict, List, Optional
 from pathlib import Path
 
 from . import JsonBaseClass
+from .exceptions import FileExtensionException
 
 
 class JsonFile(JsonBaseClass):
@@ -31,20 +32,10 @@ class JsonFile(JsonBaseClass):
         self._indent = indent
         self.ignore_errors = ignore_errors or []
 
-        if isinstance(data, dict):
-            self.data = data
-        elif isinstance(data, (str, Path)):
-            if str(data).startswith('http://') or str(data).startswith('https://'):
-                self.data = self._load_from_url(data)
-            else:
-                self._file_path = Path(data)
-                self.create_if_not_exists()
-                self.data = self.read()
-        else:
-            raise ValueError("Invalid data type. Must be a dict, file path, or URL.")
-        
-        if self._save_path:
-            self.write(self.data)
+        if not str(self._save_path).endswith(".json"):
+            raise FileExtensionException(
+                f"The file {self.save_path} not JSON file."
+            )
 
     @property
     def save_path(self):
