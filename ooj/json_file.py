@@ -1,6 +1,7 @@
 # (c) KiryxaTech 2024. Apache License 2.0
 
 import json
+import pathlib
 from typing import Any, Union, Dict, List, Optional
 from pathlib import Path
 
@@ -33,6 +34,9 @@ class JsonFile(JsonBaseClass):
             self._handle_exception(
                 FileExtensionException(f"The file {self.save_path} not JSON file.")
             )
+        
+        # Buffer for faster access to the dictionary.
+        self.__buffer = self.read()
 
     @property
     def fp(self):
@@ -59,10 +63,6 @@ class JsonFile(JsonBaseClass):
         if not self.exists():
             self.create()
 
-    def clear(self):
-        super().clear()
-        self.write({})
-
     def delete(self):
         if self._fp:
             try:
@@ -70,12 +70,17 @@ class JsonFile(JsonBaseClass):
             except FileNotFoundError as e:
                 self._handle_exception(e)
 
+    def clear(self):
+        super().clear()
+        self.write({})
+
     def write(self, data: Dict):
         if self._fp:
             try:
                 with self._fp.open('w', encoding=self._encoding) as f:
                     json.dump(data, f, indent=self._indent)
-                self.data = data
+
+                self.__update_buffer_from_dict(data)
             except Exception as e:
                 self._handle_exception(e)
 
@@ -91,7 +96,7 @@ class JsonFile(JsonBaseClass):
 
     def set_value(self, keys_path: Union[List[str], str], value: Any) -> None:
         keys_path = [keys_path] if isinstance(keys_path, str) else keys_path
-        data = self.data
+        data = self.__buffer
 
         def recursive_set(keys, data, value):
             key = keys[0]
@@ -107,19 +112,19 @@ class JsonFile(JsonBaseClass):
     
     def get_value(self, keys_path: Union[List[str], str]) -> Any:
         keys_path = [keys_path] if isinstance(keys_path, str) else keys_path
-        data = self.data
+        data = self.__buffer
 
         for key in keys_path:
             if key in data and isinstance(data, dict):
                 data = data[key]
             else:
                 self._handle_exception(KeyError(f"Key '{key}' not found or is not a dictionary."))
-                
+        
         return data
 
     def remove_key(self, keys_path: Union[List[str], str]):
         keys_path = [keys_path] if isinstance(keys_path, str) else keys_path
-        data = self.data
+        data = self.__buffer
 
         for key in keys_path[:-1]:
             if key in data and isinstance(data[key], dict):
@@ -133,6 +138,12 @@ class JsonFile(JsonBaseClass):
             self._handle_exception(KeyError(f"Key '{keys_path[-1]}' not found."))
 
         self.write(data)
+
+    def update_buffer_from_file(self):
+        self.__buffer = self.read()
+
+    def __update_buffer_from_dict(self, dictionary: Dict):
+        self.__buffer = dictionary
 
     @classmethod
     def select(cls, file_or_dict: Union['JsonFile', Dict[str, Any]], range_: range) -> Dict[str, Any]:
