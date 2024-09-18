@@ -133,36 +133,9 @@ class JsonFile(JsonBaseClass):
     def update_buffer_from_file(self):
         self.__buffer = self.read()
 
-    def __update_buffer_from_dict(self, dictionary: Dict):
-        self.__buffer = dictionary
-
-    # @classmethod
-    # def select(cls, file_or_dict: Union['JsonFile', Dict[str, Any]], range_: range) -> Dict[str, Any]:
-    #     data = cls._get_data(file_or_dict)
-    #     selected_data = {k: v for k, v in data.items() if isinstance(v, int) and v in range_}
-    #     return selected_data
-    
-    # @classmethod
-    # def union(cls, file_or_dict_1: Union['JsonFile', Dict[str, Any]], file_or_dict_2: Union['JsonFile', Dict[str, Any]]) -> Dict[str, Any]:
-    #     data_1 = cls._get_data(file_or_dict_1)
-    #     data_2 = cls._get_data(file_or_dict_2)
-    #     return {**data_1, **data_2}
-    
-    # @classmethod
-    # def intersect(cls, file_or_dict_1: Union['JsonFile', Dict[str, Any]], file_or_dict_2: Union['JsonFile', Dict[str, Any]]) -> Dict[str, Any]:
-    #     data_1 = cls._get_data(file_or_dict_1)
-    #     data_2 = cls._get_data(file_or_dict_2)
-    #     return {k: v for k, v in data_1.items() if k in data_2 and data_2[k] == v}
-
-    @classmethod
-    def _get_data(cls, file_or_dict: Union['JsonFile', Dict[str, Any]]) -> Dict[str, Any]:
-        if isinstance(file_or_dict, JsonFile):
-            return file_or_dict.data
-        elif isinstance(file_or_dict, Dict):
-            return file_or_dict
-        else:
-            raise TypeError("file_or_dict must be an instance of 'JsonFile' or a dictionary.")
-
     def _handle_exception(self, e: Exception):
         if any(isinstance(e, ignore_error) for ignore_error in self.ignore_errors):
             raise e
+    
+    def __update_buffer_from_dict(self, dictionary: Dict):
+        self.__buffer = dictionary
