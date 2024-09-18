@@ -52,7 +52,7 @@ class JsonFile(JsonBaseClass):
             self.write({})
 
     def create_if_not_exists(self):
-        if self._save_path and not self._save_path.exists():
+        if self._save_path and not self.exists():
             self.create()
 
     def clear(self):
@@ -155,26 +155,6 @@ class JsonFile(JsonBaseClass):
             return file_or_dict
         else:
             raise TypeError("file_or_dict must be an instance of 'JsonFile' or a dictionary.")
-
-    @classmethod
-    def from_url(cls, url: str, file_path: Union[str, Path], encoding: Optional[str] = "utf-8", indent: Optional[int] = 4) -> 'JsonFile':
-        response = requests.get(url)
-        response.raise_for_status()
-        data = response.json()
-        
-        instance = cls(file_path, encoding, indent)
-        instance.write(data)
-        return instance
-
-    def _load_from_url(self, url: str) -> Dict:
-        try:
-            response = requests.get(url)
-            response.raise_for_status()
-            return response.json()
-        except Exception as e:
-            if not self._ignore_exception(e):
-                raise e
-            return {}
 
     def _ignore_exception(self, e: Exception) -> bool:
         return any(isinstance(e, ignore_error) for ignore_error in self.ignore_errors)
