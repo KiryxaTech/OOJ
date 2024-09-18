@@ -1,1 +1,5 @@
-from .exceptions import NotSerializableException, CyclicFieldError
+from .exceptions import (
+    NotSerializableException,
+    CyclicFieldError,
+    FileExtensionException
+)
