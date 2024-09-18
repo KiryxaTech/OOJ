@@ -30,8 +30,8 @@ class JsonFile(JsonBaseClass):
         self.ignore_errors = ignore_errors or []
 
         if not str(self._fp).endswith(".json"):
-            raise FileExtensionException(
-                f"The file {self.save_path} not JSON file."
+            self._handle_exception(
+                FileExtensionException(f"The file {self.save_path} not JSON file.")
             )
 
     @property
@@ -40,13 +40,19 @@ class JsonFile(JsonBaseClass):
 
     @property
     def exists(self) -> bool:
-        return self._fp.exists()
+        try:
+            return self._fp.exists()
+        except OSError as e:
+            self._handle_exception(e)
 
     def create(self):
         if self._fp:
-            self._fp.parent.mkdir(parents=True, exist_ok=True)
-            self._fp.touch()
+            try:
+                self._fp.parent.mkdir(parents=True, exist_ok=True)
+            except OSError as e:
+                self._handle_exception(e)
 
+            self._fp.touch()
             self.write({})
 
     def create_if_not_exists(self):
@@ -59,7 +65,10 @@ class JsonFile(JsonBaseClass):
 
     def delete(self):
         if self._fp:
-            self._fp.unlink(missing_ok=True)
+            try:
+                self._fp.unlink(missing_ok=True)
+            except FileNotFoundError as e:
+                self._handle_exception(e)
 
     def write(self, data: Dict):
         if self._fp:
@@ -68,8 +77,7 @@ class JsonFile(JsonBaseClass):
                     json.dump(data, f, indent=self._indent)
                 self.data = data
             except Exception as e:
-                if not self._ignore_exception(e):
-                    raise e
+                self._handle_exception(e)
 
     def read(self) -> Dict:
         if not self.exists:
@@ -78,8 +86,7 @@ class JsonFile(JsonBaseClass):
             with self._fp.open('r', encoding=self._encoding) as f:
                 return json.load(f)
         except Exception as e:
-            if not self._ignore_exception(e):
-                raise e
+            self._handle_exception(e)
             return {}
 
     def set_value(self, keys_path: Union[List[str], str], value: Any) -> None:
@@ -106,7 +113,7 @@ class JsonFile(JsonBaseClass):
             if key in data and isinstance(data, dict):
                 data = data[key]
             else:
-                raise KeyError(f"Key '{key}' not found or is not a dictionary.")
+                self._handle_exception(KeyError(f"Key '{key}' not found or is not a dictionary."))
                 
         return data
 
@@ -118,12 +125,12 @@ class JsonFile(JsonBaseClass):
             if key in data and isinstance(data[key], dict):
                 data = data[key]
             else:
-                raise KeyError(f"Key '{key}' not found or is not a dictionary.")
+                self._handle_exception(KeyError(f"Key '{key}' not found or is not a dictionary."))
             
         if keys_path[-1] in data:
             del data[keys_path[-1]]
         else:
-            raise KeyError(f"Key '{keys_path[-1]}' not found.")
+            self._handle_exception(KeyError(f"Key '{keys_path[-1]}' not found."))
 
         self.write(data)
 
@@ -154,5 +161,6 @@ class JsonFile(JsonBaseClass):
         else:
             raise TypeError("file_or_dict must be an instance of 'JsonFile' or a dictionary.")
 
-    def _ignore_exception(self, e: Exception) -> bool:
-        return any(isinstance(e, ignore_error) for ignore_error in self.ignore_errors)
+    def _handle_exception(self, e: Exception):
+        if any(isinstance(e, ignore_error) for ignore_error in self.ignore_errors):
+            raise e
