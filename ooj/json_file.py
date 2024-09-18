@@ -58,6 +58,7 @@ class JsonFile(JsonBaseClass):
         if self._save_path:
             self._save_path.parent.mkdir(parents=True, exist_ok=True)
             self._save_path.touch()
+            self.write({})
 
     def create_if_not_exists(self):
         if self._save_path and not self._save_path.exists():
