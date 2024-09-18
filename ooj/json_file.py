@@ -94,50 +94,41 @@ class JsonFile(JsonBaseClass):
             self._handle_exception(e)
             return {}
 
-    def set_value(self, keys_path: Union[List[str], str], value: Any) -> None:
-        keys_path = [keys_path] if isinstance(keys_path, str) else keys_path
-        data = self.__buffer
+    def _normalize_keys(self, keys_path: Union[List[str], str]) -> List[str]:
+        return [keys_path] if isinstance(keys_path, str) else keys_path
 
-        def recursive_set(keys, data, value):
-            key = keys[0]
-            if len(keys) == 1:
-                data[key] = value
-            else:
-                if key not in data or not isinstance(data[key], dict):
+    def _navigate_to_key(self, keys_path: List[str], create_if_missing: bool = False) -> dict:
+        data = self.__buffer
+        for key in keys_path[:-1]:
+            if key not in data or not isinstance(data[key], dict):
+                if create_if_missing:
                     data[key] = {}
-                recursive_set(keys[1:], data[key], value)
-
-        recursive_set(keys_path, data, value)
-        self.write(data)
-    
-    def get_value(self, keys_path: Union[List[str], str]) -> Any:
-        keys_path = [keys_path] if isinstance(keys_path, str) else keys_path
-        data = self.__buffer
-
-        for key in keys_path:
-            if key in data and isinstance(data, dict):
-                data = data[key]
-            else:
-                self._handle_exception(KeyError(f"Key '{key}' not found or is not a dictionary."))
-        
+                else:
+                    self._handle_exception(KeyError(f"Key '{key}' not found or is not a dictionary."))
+            data = data[key]
         return data
 
-    def remove_key(self, keys_path: Union[List[str], str]):
-        keys_path = [keys_path] if isinstance(keys_path, str) else keys_path
-        data = self.__buffer
+    def update_value(self, keys_path: Union[List[str], str], value: Any) -> None:
+        keys_path = self._normalize_keys(keys_path)
+        data = self._navigate_to_key(keys_path, create_if_missing=True)
+        data[keys_path[-1]] = value
+        self.write(self.__buffer)
 
-        for key in keys_path[:-1]:
-            if key in data and isinstance(data[key], dict):
-                data = data[key]
-            else:
-                self._handle_exception(KeyError(f"Key '{key}' not found or is not a dictionary."))
-            
+    def fetch_value(self, keys_path: Union[List[str], str]) -> Any:
+        keys_path = self._normalize_keys(keys_path)
+        data = self._navigate_to_key(keys_path)
+        if keys_path[-1] in data:
+            return data[keys_path[-1]]
+        self._handle_exception(KeyError(f"Key '{keys_path[-1]}' not found."))
+
+    def delete_key(self, keys_path: Union[List[str], str]) -> None:
+        keys_path = self._normalize_keys(keys_path)
+        data = self._navigate_to_key(keys_path)
         if keys_path[-1] in data:
             del data[keys_path[-1]]
         else:
             self._handle_exception(KeyError(f"Key '{keys_path[-1]}' not found."))
-
-        self.write(data)
+        self.write(self.__buffer)
 
     def update_buffer_from_file(self):
         self.__buffer = self.read()
@@ -145,23 +136,23 @@ class JsonFile(JsonBaseClass):
     def __update_buffer_from_dict(self, dictionary: Dict):
         self.__buffer = dictionary
 
-    @classmethod
-    def select(cls, file_or_dict: Union['JsonFile', Dict[str, Any]], range_: range) -> Dict[str, Any]:
-        data = cls._get_data(file_or_dict)
-        selected_data = {k: v for k, v in data.items() if isinstance(v, int) and v in range_}
-        return selected_data
+    # @classmethod
+    # def select(cls, file_or_dict: Union['JsonFile', Dict[str, Any]], range_: range) -> Dict[str, Any]:
+    #     data = cls._get_data(file_or_dict)
+    #     selected_data = {k: v for k, v in data.items() if isinstance(v, int) and v in range_}
+    #     return selected_data
     
-    @classmethod
-    def union(cls, file_or_dict_1: Union['JsonFile', Dict[str, Any]], file_or_dict_2: Union['JsonFile', Dict[str, Any]]) -> Dict[str, Any]:
-        data_1 = cls._get_data(file_or_dict_1)
-        data_2 = cls._get_data(file_or_dict_2)
-        return {**data_1, **data_2}
+    # @classmethod
+    # def union(cls, file_or_dict_1: Union['JsonFile', Dict[str, Any]], file_or_dict_2: Union['JsonFile', Dict[str, Any]]) -> Dict[str, Any]:
+    #     data_1 = cls._get_data(file_or_dict_1)
+    #     data_2 = cls._get_data(file_or_dict_2)
+    #     return {**data_1, **data_2}
     
-    @classmethod
-    def intersect(cls, file_or_dict_1: Union['JsonFile', Dict[str, Any]], file_or_dict_2: Union['JsonFile', Dict[str, Any]]) -> Dict[str, Any]:
-        data_1 = cls._get_data(file_or_dict_1)
-        data_2 = cls._get_data(file_or_dict_2)
-        return {k: v for k, v in data_1.items() if k in data_2 and data_2[k] == v}
+    # @classmethod
+    # def intersect(cls, file_or_dict_1: Union['JsonFile', Dict[str, Any]], file_or_dict_2: Union['JsonFile', Dict[str, Any]]) -> Dict[str, Any]:
+    #     data_1 = cls._get_data(file_or_dict_1)
+    #     data_2 = cls._get_data(file_or_dict_2)
+    #     return {k: v for k, v in data_1.items() if k in data_2 and data_2[k] == v}
 
     @classmethod
     def _get_data(cls, file_or_dict: Union['JsonFile', Dict[str, Any]]) -> Dict[str, Any]:
