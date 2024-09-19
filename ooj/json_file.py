@@ -4,9 +4,9 @@ import json
 from typing import Any, Dict, List, Union
 from pathlib import Path
 
-from . import JsonBaseClass
-from .exceptions import FileExtensionException
+from .json_base_class import JsonBaseClass
 from .json_objects import RootTree, Entry, JsonObject
+from .exceptions import FileExtensionException
 
 
 class JsonFile(JsonBaseClass):
@@ -64,7 +64,7 @@ class JsonFile(JsonBaseClass):
 
     def create_if_not_exists(self):
         """ Creates a file if it does not exist. """
-        if not self.exists():
+        if not self.exists:
             self.create()
 
     def delete(self):
@@ -85,8 +85,10 @@ class JsonFile(JsonBaseClass):
         if self._fp:
             try:
                 with self._fp.open('w', encoding=self._encoding) as f:
-                    if isinstance(data, JsonObject):
+                    if isinstance(data, RootTree):
                         data = data.to_dict()
+                    elif not isinstance(data, dict):
+                        self._handle_exception(TypeError(f'Type {type(data)} not supported in write method.'))
                     json.dump(data, f, indent=self._indent)
 
                 self.__update_buffer_from_dict(data)
