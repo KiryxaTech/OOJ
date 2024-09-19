@@ -4,7 +4,8 @@ import json
 from typing import Any, Dict, List, Union
 from pathlib import Path
 
-from . import JsonBaseClass
+from .json_base_class import JsonBaseClass
+from .json_objects import RootTree, Entry, JsonObject
 from .exceptions import FileExtensionException
 
 
@@ -63,7 +64,7 @@ class JsonFile(JsonBaseClass):
 
     def create_if_not_exists(self):
         """ Creates a file if it does not exist. """
-        if not self.exists():
+        if not self.exists:
             self.create()
 
     def delete(self):
@@ -79,11 +80,15 @@ class JsonFile(JsonBaseClass):
         super().clear()
         self.write({})
 
-    def write(self, data: Dict):
+    def write(self, data: Union[Dict, RootTree]):
         """ Writes a dictionary to a file. """
         if self._fp:
             try:
                 with self._fp.open('w', encoding=self._encoding) as f:
+                    if isinstance(data, RootTree):
+                        data = data.to_dict()
+                    elif not isinstance(data, dict):
+                        self._handle_exception(TypeError(f'Type {type(data)} not supported in write method.'))
                     json.dump(data, f, indent=self._indent)
 
                 self.__update_buffer_from_dict(data)
@@ -120,58 +125,39 @@ class JsonFile(JsonBaseClass):
             data = data[key]
         return data
 
-    def update_value(self, keys_path: Union[List[str], str], value: Any) -> None:
+    def set_entry(self, key_s: Union[List[str], str], value: Union[Any, Entry, RootTree]) -> None:
         """
         Updates the value at the specified key path. If any intermediate keys 
         are missing, they will be created as empty dictionaries.
         
         Arguments:
-        - keys_path (Union[List[str], str]): A single key or a list of keys representing 
-          the path to the value in the dictionary.
-        - value (Any): The value to set at the specified key path.
+        - key_s (Union[List[str], str]): A single key or a list of keys representing 
+        the path to the value in the dictionary.
+        - value (Union[Any, Entry, Tree]): The value or Entry/Tree object to set at the specified key path.
         """
-        keys_path = self._normalize_keys(keys_path)
-        data = self._navigate_to_key(keys_path, create_if_missing=True)
-        data[keys_path[-1]] = value
+        key_s = self._normalize_keys(key_s)
+        
+        if isinstance(value, (Entry, RootTree)):
+            value = value.to_dict()
+
+        data = self._navigate_to_key(key_s, create_if_missing=True)
+        data[key_s[-1]] = value
         self.write(self.__buffer)
 
-    def fetch_value(self, keys_path: Union[List[str], str]) -> Any:
-        """
-        Retrieves the value at the specified key path from the internal buffer.
-        
-        Arguments:
-        - keys_path (Union[List[str], str]): A single key or a list of keys representing 
-          the path to the value in the dictionary.
-        
-        Returns:
-        - Any: The value at the specified key path.
-        
-        Raises:
-        - KeyError: If the key path does not exist in the data.
-        """
-        keys_path = self._normalize_keys(keys_path)
-        data = self._navigate_to_key(keys_path)
-        if keys_path[-1] in data:
-            return data[keys_path[-1]]
-        self._handle_exception(KeyError(f"Key '{keys_path[-1]}' not found."))
+    def get_entry(self, key_s: Union[List[str], str]) -> Any:
+        key_s = self._normalize_keys(key_s)
+        data = self._navigate_to_key(key_s)
+        if key_s[-1] in data:
+            return data[key_s[-1]]
+        self._handle_exception(KeyError(f"Key '{key_s[-1]}' not found."))
 
-    def delete_key(self, keys_path: Union[List[str], str]) -> None:
-        """
-        Deletes the value at the specified key path from the internal buffer.
-        
-        Arguments:
-        - keys_path (Union[List[str], str]): A single key or a list of keys representing 
-          the path to the value in the dictionary.
-        
-        Raises:
-        - KeyError: If the key path does not exist in the data.
-        """
-        keys_path = self._normalize_keys(keys_path)
-        data = self._navigate_to_key(keys_path)
-        if keys_path[-1] in data:
-            del data[keys_path[-1]]
+    def del_entry(self, key_s: Union[List[str], str]) -> None:
+        key_s = self._normalize_keys(key_s)
+        data = self._navigate_to_key(key_s)
+        if key_s[-1] in data:
+            del data[key_s[-1]]
         else:
-            self._handle_exception(KeyError(f"Key '{keys_path[-1]}' not found."))
+            self._handle_exception(KeyError(f"Key '{key_s[-1]}' not found."))
         self.write(self.__buffer)
 
     def update_buffer_from_file(self):
