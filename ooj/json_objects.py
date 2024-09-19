@@ -1,7 +1,17 @@
 from typing import Any, Dict, List, Union
+from abc import ABC, abstractmethod
 
 
-class Entry:
+class JsonObject(ABC):
+    def __str__(self):
+        return str(self.to_dict())
+    
+    @abstractmethod
+    def to_dict(self) -> Dict:
+        pass
+
+
+class Entry(JsonObject):
     """
     Представляет пару ключ-значение.
     """
@@ -9,13 +19,22 @@ class Entry:
         self.key = key
         self.value = value
 
+    def __str__(self):
+        return str(self.to_dict())
+    
+    def to_dict(self):
+        return {self.key: self.value}
 
-class BaseTree:
+
+class BaseTree(JsonObject):
     """
     Базовый класс для дерева. Определяет общие методы для работы с узлами дерева.
     """
     def __init__(self, *entries: Union[Entry, 'BaseTree']) -> None:
         self.tree: List[Union[Entry, 'BaseTree']] = list(entries)
+
+    def __str__(self) -> str:
+        return str(self.to_dict())
 
     def add(self, entry: Union[Entry, 'BaseTree']):
         """
@@ -36,10 +55,7 @@ class BaseTree:
         dictionary = {}
 
         for entry in self.tree:
-            if isinstance(entry, Entry):
-                dictionary[entry.key] = entry.value
-            elif isinstance(entry, BaseTree) and hasattr(entry, 'key'):
-                dictionary[entry.key] = entry.to_dict()
+            dictionary.update(entry.to_dict())  # Используем to_dict для всех элементов
 
         return dictionary
 
