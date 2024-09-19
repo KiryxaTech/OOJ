@@ -1,7 +1,7 @@
-from typing import Union
+from typing import Union, Tuple
 
 
-class Key:
+class Entry:
     def __new__(cls, name, value):
         instance = super().__new__(cls)
         instance.__name = name
@@ -14,7 +14,7 @@ class Key:
         self.value = value
     
 
-class NestedKey:
+class NestedEntry:
     def __new__(cls, *inner_names, value):
         instance = super().__new__(cls)
         instance.__inner_names = inner_names
@@ -28,11 +28,11 @@ class NestedKey:
 
 
 class Tree:
-    def __init__(self, *keys: Union[Key, NestedKey]):
+    def __init__(self, *keys: Tuple[Union[Entry, NestedEntry]]):
         self.__tree = list(keys)
 
-    def add(key: Union[Key, NestedKey]):
+    def add(key: Union[Entry, NestedEntry]):
         pass
 
-    def remove(self, *keys: Union[Key, NestedKey]):
+    def remove(self, *keys: Union[Entry, NestedEntry]):
         pass
