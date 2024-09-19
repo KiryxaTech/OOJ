@@ -2,34 +2,34 @@ from typing import Union, Tuple
 
 
 class Entry:
-    def __new__(cls, name, value):
+    def __new__(cls, key, value):
         instance = super().__new__(cls)
-        instance.__name = name
+        instance.key = key
         instance.value = value
 
-        return name
+        return key
 
-    def __init__(self, name, value) -> None:
-        self.__name = name
+    def __init__(self, key, value) -> None:
+        self.key = key
         self.value = value
     
 
 class NestedEntry:
-    def __new__(cls, *inner_names, value):
+    def __new__(cls, *nested_entries: Tuple[Union[str, Entry]], value):
         instance = super().__new__(cls)
-        instance.__inner_names = inner_names
+        instance.nested_entries = nested_entries
         instance.value = value
 
-        return inner_names
+        return nested_entries
 
-    def __init__(self, *inner_names, value) -> None:
-        self.__inner_names = inner_names
+    def __init__(self, *nested_entries, value) -> None:
+        self.nested_entries = nested_entries
         self.value = value
 
 
 class Tree:
-    def __init__(self, *keys: Tuple[Union[Entry, NestedEntry]]):
-        self.__tree = list(keys)
+    def __init__(self, *entries: Tuple[Union[Entry, NestedEntry]]):
+        self.tree = list(entries)
 
     def add(key: Union[Entry, NestedEntry]):
         pass
