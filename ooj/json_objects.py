@@ -1,38 +1,55 @@
-from typing import Union, Tuple
+from typing import Any, Dict, List, Union
 
 
 class Entry:
-    def __new__(cls, key, value):
-        instance = super().__new__(cls)
-        instance.key = key
-        instance.value = value
-
-        return key
-
-    def __init__(self, key, value) -> None:
+    """
+    Представляет пару ключ-значение.
+    """
+    def __init__(self, key: str, value: Any) -> None:
         self.key = key
         self.value = value
-    
-
-class NestedEntry:
-    def __new__(cls, *nested_entries: Tuple[Union[str, Entry]], value):
-        instance = super().__new__(cls)
-        instance.nested_entries = nested_entries
-        instance.value = value
-
-        return nested_entries
-
-    def __init__(self, *nested_entries, value) -> None:
-        self.nested_entries = nested_entries
-        self.value = value
 
 
-class Tree:
-    def __init__(self, *entries: Tuple[Union[Entry, NestedEntry]]):
-        self.tree = list(entries)
+class BaseTree:
+    """
+    Базовый класс для дерева. Определяет общие методы для работы с узлами дерева.
+    """
+    def __init__(self, *entries: Union[Entry, 'BaseTree']) -> None:
+        self.tree: List[Union[Entry, 'BaseTree']] = list(entries)
 
-    def add(key: Union[Entry, NestedEntry]):
-        pass
+    def add(self, entry: Union[Entry, 'BaseTree']):
+        """
+        Добавляет элемент (Entry или поддерево) в текущее дерево.
+        """
+        self.tree.append(entry)
 
-    def remove(self, *keys: Union[Entry, NestedEntry]):
-        pass
+    def remove(self, key: str):
+        """
+        Удаляет элемент из дерева по ключу.
+        """
+        self.tree = [entry for entry in self.tree if not (isinstance(entry, Entry) and entry.key == key)]
+
+    def to_dict(self) -> Dict:
+        """
+        Преобразует дерево и поддеревья в словарь.
+        """
+        dictionary = {}
+
+        for entry in self.tree:
+            if isinstance(entry, Entry):
+                dictionary[entry.key] = entry.value
+            elif isinstance(entry, BaseTree) and hasattr(entry, 'key'):
+                dictionary[entry.key] = entry.to_dict()
+
+        return dictionary
+
+
+class RootTree(BaseTree):
+    def __init__(self, *entries: Union[Entry, 'BaseTree']) -> None:
+        super().__init__(*entries)
+
+
+class Tree(BaseTree):
+    def __init__(self, key: str, *entries: Union[Entry, 'BaseTree']) -> None:
+        super().__init__(*entries)
+        self.key = key
