@@ -27,9 +27,6 @@ class Entry(JsonObject):
 
 
 class BaseTree(JsonObject):
-    """
-    Базовый класс для дерева. Определяет общие методы для работы с узлами дерева.
-    """
     def __init__(self, *entries: Union[Entry, 'BaseTree']) -> None:
         self.tree: List[Union[Entry, 'BaseTree']] = list(entries)
 
@@ -37,25 +34,19 @@ class BaseTree(JsonObject):
         return str(self.to_dict())
 
     def add(self, entry: Union[Entry, 'BaseTree']):
-        """
-        Добавляет элемент (Entry или поддерево) в текущее дерево.
-        """
         self.tree.append(entry)
 
     def remove(self, key: str):
-        """
-        Удаляет элемент из дерева по ключу.
-        """
         self.tree = [entry for entry in self.tree if not (isinstance(entry, Entry) and entry.key == key)]
 
     def to_dict(self) -> Dict:
-        """
-        Преобразует дерево и поддеревья в словарь.
-        """
         dictionary = {}
-
+        
         for entry in self.tree:
-            dictionary.update(entry.to_dict())  # Используем to_dict для всех элементов
+            if isinstance(entry, Entry):
+                dictionary.update(entry.to_dict())
+            elif isinstance(entry, BaseTree):
+                dictionary[entry.key] = entry.to_dict()  # Используем key для поддеревьев
 
         return dictionary
 

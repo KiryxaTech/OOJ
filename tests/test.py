@@ -3,7 +3,7 @@ from ooj.json_file import JsonFile
 
 
 def test_tree():
-    file = JsonFile('test.json', indent=0)
+    file = JsonFile('test.json')
     file.create_if_not_exists()
 
     tree = RootTree(
