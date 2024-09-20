@@ -1,46 +1,27 @@
 # (c) KiryxaTech 2024. Apache License 2.0
 
-import json
 from abc import ABC
-from collections import UserDict
-from typing import Optional, Union, Dict, List
-from pathlib import Path
+from typing import Any, Dict, Union
+
+from .json_objects import RootTree, TreeConverter
 
 
-class JsonBaseClass(ABC, UserDict):
+class JsonBase(ABC):
     """
     A base class for handling JSON data with optional file operations.
 
     Attributes:
-        data (Optional[Dict]): The JSON data.
-        file_path (Optional[Union[Path, str]]): The file path to save the JSON data.
-        encoding (Optional[str]): The encoding for the output file.
-        indent (Optional[int]): The indentation level for the JSON output.
-        ignore_exceptions_list (Optional[List[Exception]]): A list of exceptions to ignore.
+        data (Dict[str, Any]): The JSON data.
     """
 
-    def __init__(self,
-                 data: Optional[Dict] = None,
-                 file_path: Optional[Union[Path, str]] = None,
-                 encoding: Optional[str] = "utf-8",
-                 indent: Optional[int] = 4,
-                 ignore_exceptions_list: Optional[List[Exception]] = None) -> None:
+    def __init__(self, data: Union[Dict[str, Any], RootTree]):
         """
         Initializes the JsonBaseClass instance.
 
         Args:
-            data (Optional[Dict]): The JSON data. Defaults to an empty dictionary.
-            file_path (Optional[Union[Path, str]]): The file path to save the JSON data.
-            encoding (Optional[str]): The encoding for the output file. Defaults to "utf-8".
-            indent (Optional[int]): The indentation level for the JSON output. Defaults to 4.
-            ignore_exceptions_list (Optional[List[Exception]]): A list of exceptions to ignore. Defaults to an empty list.
+            data (Dict[str, Any]): The JSON data. Defaults to an empty dictionary.
         """
-        super().__init__()
-        self._data = data or {}
-        self._file_path = file_path
-        self._encoding = encoding
-        self._indent = indent
-        self._ignore_exceptions_list = ignore_exceptions_list or []
+        self.__buffer: RootTree = None
 
     def __str__(self) -> str:
         """
@@ -49,21 +30,28 @@ class JsonBaseClass(ABC, UserDict):
         Returns:
             str: The JSON data as a string.
         """
-        return json.dumps(self._data, indent=self._indent, ensure_ascii=False)
+        return str(self.__buffer)
+    
+    def __dict__(self) -> Dict[str, Any]:
+        """
+        Returns the JSON data as a formatted Dict[str, Any].
 
-    def load(self):
-        try:
-            with open(self._file_path, 'r', encoding=self._encoding) as file:
-                return json.load(file)
-        except Exception as e:
-            self._handle_exception(e)
+        Returns:
+            Dict[str, Any]: The JSON data as a dict.
+        """
+        return self.__buffer.to_dict()
+    
+    def get_buffer_dict(self) -> dict:
+        return TreeConverter.to_dict(self.__buffer)
 
-    def dump(self, data):
-        try:
-            with open(self._file_path, 'w', encoding=self._encoding) as file:
-                return json.dump(file, data, indent=self._indent)
-        except Exception as e:
-            self._handle_exception(e)
+    def get_buffer_tree(self) -> RootTree:
+        return self.__buffer
+    
+    def _update_buffer(self, buffer_data: Union[Dict[str, Any], RootTree]):
+        if isinstance(buffer_data, RootTree):
+            self.__buffer = buffer_data
+        elif isinstance(buffer_data, dict):
+            self.__buffer = TreeConverter.to_root_tree(buffer_data)
 
     def _handle_exception(self, exception: Exception) -> None:
         """
