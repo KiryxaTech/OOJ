@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Union, override
 from abc import ABC, abstractmethod
 
 
@@ -41,12 +41,12 @@ class BaseTree(JsonObject):
 
     def to_dict(self) -> Dict:
         dictionary = {}
-        
+
         for entry in self.tree:
             if isinstance(entry, Entry):
                 dictionary.update(entry.to_dict())
             elif isinstance(entry, BaseTree):
-                dictionary[entry.key] = entry.to_dict()  # Используем key для поддеревьев
+                dictionary[entry.key] = entry.to_dict()
 
         return dictionary
 
@@ -60,3 +60,35 @@ class Tree(BaseTree):
     def __init__(self, key: str, *entries: Union[Entry, 'BaseTree']) -> None:
         super().__init__(*entries)
         self.key = key
+
+
+class TreeConverter:
+    @classmethod
+    def to_root_tree(cls, json_data: dict) -> RootTree:
+        root_tree = RootTree()
+        
+        for key, value in json_data.items():
+            if isinstance(value, dict):
+                # Рекурсивно обрабатываем словари для вложенных деревьев
+                subtree = cls.to_tree(key, value)
+                root_tree.add(subtree)
+            else:
+                # Добавляем пары ключ-значение в RootTree
+                root_tree.add(Entry(key, value))
+
+        return root_tree
+
+    @classmethod
+    def to_tree(cls, key: str, json_data: dict) -> Tree:
+        tree = Tree(key)
+        
+        for entry_key, entry_value in json_data.items():
+            if isinstance(entry_value, dict):
+                # Рекурсивно создаем поддерево
+                subtree = cls.to_tree(entry_key, entry_value)
+                tree.add(subtree)
+            else:
+                # Добавляем обычные записи
+                tree.add(Entry(entry_key, entry_value))
+        
+        return tree
