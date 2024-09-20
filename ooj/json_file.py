@@ -183,7 +183,7 @@ class JsonFile(JsonBase, Readable, Writable):
         Arguments:
         - e (Exception): The exception to be handled.
         """
-        if any(isinstance(e, ignore_error) for ignore_error in self.ignore_errors):
+        if not any(isinstance(e, ignore_error) for ignore_error in self.ignore_errors):
             raise e
 
     def __update_buffer_from_dict(self, dictionary: Dict):
