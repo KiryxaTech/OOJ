@@ -165,7 +165,7 @@ class JsonFile(JsonBase, Readable, Writable):
             del data[key_s[-1]]
         else:
             self._handle_exception(KeyError(f"Key '{key_s[-1]}' not found."))
-        self.write(self.__buffer)
+        self.write(data)
 
     def update_buffer_from_file(self):
         """
