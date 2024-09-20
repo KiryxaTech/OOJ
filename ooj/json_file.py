@@ -4,7 +4,7 @@ import json
 from typing import Any, Dict, List, Union
 from pathlib import Path
 
-from .json_base_class import JsonBase, Readable, Writable
+from .json_base import JsonBase, Readable, Writable
 from .json_objects import RootTree, Entry, TreeConverter
 from .exceptions import FileExtensionException
 
