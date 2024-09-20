@@ -80,7 +80,6 @@ class JsonFile(JsonBase, Readable, Writable):
 
     def clear(self):
         """ Cleaning the file. """
-        super().clear()
         self.write({})
 
     def write(self, data: Union[Dict, RootTree]):
