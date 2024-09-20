@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Union
 from pathlib import Path
 
 from .json_base_class import JsonBaseClass
-from .json_objects import RootTree, Entry, JsonObject
+from .json_objects import RootTree, Entry, TreeConverter
 from .exceptions import FileExtensionException
 
 
@@ -105,6 +105,11 @@ class JsonFile(JsonBaseClass):
         except Exception as e:
             self._handle_exception(e)
             return {}
+        
+    def read_tree(self) -> RootTree:
+        json_data = self.read()
+        return TreeConverter.to_root_tree(json_data)
+
 
     def _normalize_keys(self, keys_path: Union[List[str], str]) -> List[str]:
         """ Checks whether the keys are valid. """
