@@ -1,3 +1,5 @@
+# (c) KiryxaTech, 2024. Apache License 2.0
+
 from typing import Any, Dict, List, Union, override
 from abc import ABC, abstractmethod
 
@@ -7,8 +9,7 @@ class JsonObject(ABC):
         return str(self.to_dict())
     
     @abstractmethod
-    def to_dict(self) -> Dict:
-        pass
+    def to_dict(self) -> Dict: pass
 
 
 class Entry(JsonObject):
