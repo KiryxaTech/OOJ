@@ -4,12 +4,12 @@ import json
 from typing import Any, Dict, List, Union
 from pathlib import Path
 
-from .json_base_class import JsonBaseClass
+from .json_base_class import JsonBase, Readable, Writable
 from .json_objects import RootTree, Entry, TreeConverter
 from .exceptions import FileExtensionException
 
 
-class JsonFile(JsonBaseClass):
+class JsonFile(JsonBase, Readable, Writable):
     def __init__(self,
                  fp: Union[str, Path],
                  encoding: str = "utf-8",
@@ -22,12 +22,15 @@ class JsonFile(JsonBaseClass):
         - indent (int): Indentation for JSON formatting
         - ignore_errors (List[Exceptions]): List of exceptions to ignore during read/write operations
         """
-        super().__init__()
         
         self._fp = Path(fp)
         self._encoding = encoding
         self._indent = indent
         self.ignore_errors = ignore_errors or []
+
+        JsonBase.__init__(self, {})
+        Readable.__init__(self, self._fp)
+        Readable.__init__(self, self._fp)
 
         # Checking the file path for the validity of the extension.
         if not str(self._fp).endswith(".json"):

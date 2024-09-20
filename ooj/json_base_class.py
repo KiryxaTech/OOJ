@@ -1,9 +1,24 @@
 # (c) KiryxaTech 2024. Apache License 2.0
 
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import Any, Dict, Union
 
 from .json_objects import RootTree, TreeConverter
+
+
+class Readable(ABC):
+    def __init__(self, fp: str):
+        self._fp = fp
+
+    @abstractmethod
+    def read(self): pass
+
+
+class Writable(ABC):
+    def __init__(self, fp: str) -> None:
+        self._fp = fp
+
+    def write(self, data: Union[Dict[str, Any], RootTree]): pass
 
 
 class JsonBase(ABC):
