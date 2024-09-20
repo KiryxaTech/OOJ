@@ -92,3 +92,7 @@ class TreeConverter:
                 tree.add(Entry(entry_key, entry_value))
         
         return tree
+    
+    @classmethod
+    def to_dict(cls, json_object: Union[Entry, Tree, RootTree]) -> Dict:
+        return json_object.to_dict()
