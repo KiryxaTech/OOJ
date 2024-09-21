@@ -1,18 +1,20 @@
 import pytest
 import json
-from ooj.exceptions import NotSerializableException, CyclicFieldError
+from ooj.exceptions import NotSerializableException
 from ooj.json_serializer import JsonSerializer
-from ooj.json_file import JsonFile
+
 
 class SampleClass:
     def __init__(self, name, value):
         self.name = name
         self.value = value
 
+
 class ComplexClass:
     def __init__(self, id, data):
         self.id = id
         self.data = data
+
 
 class TestJsonSerializer:
     @pytest.fixture
