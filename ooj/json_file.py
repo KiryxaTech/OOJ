@@ -80,7 +80,6 @@ class JsonFile(JsonBase, Readable, Writable):
 
     def clear(self):
         """ Cleaning the file. """
-        super().clear()
         self.write({})
 
     def write(self, data: Union[Dict, RootTree]):
@@ -166,7 +165,7 @@ class JsonFile(JsonBase, Readable, Writable):
             del data[key_s[-1]]
         else:
             self._handle_exception(KeyError(f"Key '{key_s[-1]}' not found."))
-        self.write(self.__buffer)
+        self.write(data)
 
     def update_buffer_from_file(self):
         """
@@ -184,7 +183,7 @@ class JsonFile(JsonBase, Readable, Writable):
         Arguments:
         - e (Exception): The exception to be handled.
         """
-        if any(isinstance(e, ignore_error) for ignore_error in self.ignore_errors):
+        if not any(isinstance(e, ignore_error) for ignore_error in self.ignore_errors):
             raise e
 
     def __update_buffer_from_dict(self, dictionary: Dict):

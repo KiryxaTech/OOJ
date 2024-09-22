@@ -1,7 +1,0 @@
-{
-    "key_1": "value_1",
-    "key_2": {
-        "nested_key_2": "value_2"
-    },
-    "new_key": "new_value"
-}

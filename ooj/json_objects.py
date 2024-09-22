@@ -1,12 +1,18 @@
 # (c) KiryxaTech, 2024. Apache License 2.0
 
-from typing import Any, Dict, List, Union, override
+from typing import Any, Dict, List, Union
 from abc import ABC, abstractmethod
 
 
 class JsonObject(ABC):
     def __str__(self):
         return str(self.to_dict())
+    
+    def __eq__(self, value: Union[Dict[str, Any], 'JsonObject']) -> bool:
+        return str(self) == str(value)
+        
+    def __ne__(self, value: Union[Dict[str, Any], 'JsonObject']) -> bool:
+        return str(self) != str(value)
     
     @abstractmethod
     def to_dict(self) -> Dict: pass

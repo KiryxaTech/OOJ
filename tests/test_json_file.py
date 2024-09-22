@@ -1,157 +1,119 @@
-import os
 import pytest
 from pathlib import Path
 from ooj.json_file import JsonFile
+from ooj.json_objects import RootTree, Tree, Entry
 
-# Base path from test JSON files
+# Базовый путь для тестов JSON файлов
 BASE_PATH = Path('tests/files/test_json_files')
 
+# Пример тестового дерева
+test_tree = RootTree(
+    Entry("key", "value"),
+    Tree("tree",
+        Entry("key1", "value1"),
+        Entry("key2", "value2")
+    )
+)
 
 class TestJsonFile:
+    @pytest.fixture(scope="function", autouse=True)
+    def setup_teardown(self):
+        """Создает необходимые папки перед каждым тестом и удаляет после."""
+        BASE_PATH.mkdir(parents=True, exist_ok=True)
+        yield
+        for json_file in BASE_PATH.glob("*.json"):
+            json_file.unlink()  # Удаляем все тестовые файлы после каждого теста
+
     @pytest.mark.parametrize(
-        "file_path",
+        "fp, data",
         [
-            BASE_PATH / "created_file.json",
-            BASE_PATH / "not_created_file.json"
+            (BASE_PATH / "test_write.json", {"name": "test", "age": 25}),
+            (BASE_PATH / "test_write_tree.json", test_tree),
         ]
     )
-    def test_create_if_not_exists(self, file_path):
-        JsonFile(file_path)
+    def test_write(self, fp: Path, data):
+        file = JsonFile(fp)
+        file.create_if_not_exists()
+        
+        file.write(data)
+        file_data = file.read()
+
+        if isinstance(data, RootTree):
+            data = data.to_dict()
+        
+        assert file_data == data
+
+    def test_create_if_not_exists(self):
+        """Тестирование создания файла, если он не существует."""
+        file_path = BASE_PATH / "test_create.json"
+        json_file = JsonFile(file_path)
+
+        json_file.create_if_not_exists()
 
         assert file_path.exists()
 
-    @pytest.mark.parametrize(
-        "keys_path, value",
-        [
-            ("key_1", "value_1"),
-            (["key_2", "nested_key_2"], "value"),
-            ("new_key", "value")
-        ]
-    )
-    def test_set_and_get_value(self, keys_path, value):
-        file = JsonFile(BASE_PATH / "set_and_get_value.json")
-        file.set_value(keys_path, value)
-        assert file.get_value(keys_path) == value
+    def test_delete(self):
+        """Тестирование удаления файла."""
+        file_path = BASE_PATH / "test_delete.json"
+        json_file = JsonFile(file_path)
+        
+        json_file.create_if_not_exists()
+        assert file_path.exists()
+
+        json_file.delete()
+        assert not file_path.exists()
+
+    def test_clear(self):
+        """Тестирование очистки содержимого файла."""
+        file_path = BASE_PATH / "test_clear.json"
+        json_file = JsonFile(file_path)
+        json_file.create_if_not_exists()
+
+        json_file.write({"key": "value"})
+        assert json_file.read() == {"key": "value"}
+
+        json_file.clear()
+        assert json_file.read() == {}
 
     @pytest.mark.parametrize(
-        "keys_path",
+        "key_s, value",
         [
-            "key",
-            ["keys", "nested_key"]
+            ("key1", "value1"),
+            (["key2", "nested_key2"], "nested_value"),
         ]
     )
-    def test_remove_key(self, keys_path):
-        file = JsonFile(BASE_PATH / "remove_key.json")
-        file.set_value(keys_path, "dummy_value")
-        file.remove_key(keys_path)
+    def test_set_entry(self, key_s, value):
+        """Тестирование установки значений по ключу."""
+        file = JsonFile(BASE_PATH / "test_set_entry.json")
+        file.create_if_not_exists()
+
+        file.set_entry(key_s, value)
+        assert file.get_entry(key_s) == value
+
+    @pytest.mark.parametrize(
+        "key_s, value",
+        [
+            ("key1", "value1"),
+            (["key2", "nested_key2"], "nested_value"),
+        ]
+    )
+    def test_del_entry(self, key_s, value):
+        """Тестирование удаления значения по ключу."""
+        file = JsonFile(BASE_PATH / "test_del_entry.json")
+        file.create_if_not_exists()
+
+        file.set_entry(key_s, value)
+        assert file.get_entry(key_s) == value
+
+        file.del_entry(key_s)
         with pytest.raises(KeyError):
-            file.get_value(keys_path)
+            file.get_entry(key_s)
 
-    @pytest.mark.parametrize(
-        "keys_path",
-        [
-            "key",
-            ["keys", "nested_key"]
-        ]
-    )
-    def test_remove_key(self, keys_path):
-        file = JsonFile(BASE_PATH / "remove_key.json")
-        file.set_value(keys_path, "dummy_value")
-        file.remove_key(keys_path)
-        with pytest.raises(KeyError):
-            file.get_value(keys_path)
+    def test_read_tree(self):
+        """Тестирование чтения JSON в виде дерева."""
+        file = JsonFile(BASE_PATH / "test_tree.json")
+        file.create_if_not_exists()
+        file.write(test_tree)
 
-    @pytest.mark.parametrize(
-        "file_or_dict, range_",
-        [
-            (JsonFile(BASE_PATH / 'select.json'), range(0, 10)),
-            (
-                {"key1": 0, "key2": 12, "key3": -8,
-                "key4": 4, "key5": 2, "key6": -5,
-                "key7": -3, "key8": 7, "key9": -84,
-                "key10": 9},
-                range(-10, 0)
-            )
-        ]
-    )
-    def test_select(self, file_or_dict, range_):
-        data = JsonFile.select(file_or_dict, range_)
-
-        keys = []
-        if isinstance(data, JsonFile):
-            for key, value in data.read().items():
-                if value in range_:
-                    keys.append(key)
-
-            assert data.read()[keys[0]] in range_
-
-        elif isinstance(data, dict):
-            for key, value in data.items():
-                if value in range_:
-                    keys.append(key)
-
-            assert data[keys[0]] in range_
-
-    @pytest.mark.parametrize(
-        "file_or_dict_1, file_or_dict_2, expected_result",
-        [
-            # Test union JsonFiles
-            (
-                JsonFile(BASE_PATH / "union/union_1.json"),
-                JsonFile(BASE_PATH / "union/union_2.json"),
-
-                JsonFile(BASE_PATH / "union/union_1.json").read() |\
-                JsonFile(BASE_PATH / "union/union_2.json").read()
-            ),
-            # Test union JsonFile & dict 
-            (
-                JsonFile(BASE_PATH / "union/union_1.json"),
-                {"key_1": "value_1", "key_3": "value_3", "key_8": "value_8"},
-
-                JsonFile(BASE_PATH / "union/union_1.json").read() | {"key_1": "value_1", "key_3": "value_3", "key_8": "value_8"}
-            ),
-            # Test union dicts
-            (
-                {"key_1": "value_1", "key_2": "value_2", "key_3": "value_3"},
-                {"key_1": "value_1", "key_3": "value_3", "key_8": "value_8"},
-
-                {"key_1": "value_1", "key_2": "value_2", "key_3": "value_3"} |\
-                {"key_1": "value_1", "key_3": "value_3", "key_8": "value_8"}
-            )
-        ]
-    )
-    def test_union(self, file_or_dict_1: JsonFile, file_or_dict_2, expected_result):
-        assert JsonFile.union(file_or_dict_1, file_or_dict_2) == expected_result
-
-    @pytest.mark.parametrize(
-        "file_or_dict_1, file_or_dict_2, expected_result",
-        [
-            # Test intersect JsonFiles
-            (
-                JsonFile(BASE_PATH / "intersect/intersect_1.json"),
-                JsonFile(BASE_PATH / "intersect/intersect_2.json"),
-
-                dict(JsonFile(BASE_PATH / "intersect/intersect_1.json").read().items() &\
-                JsonFile(BASE_PATH / "intersect/intersect_2.json").read().items())
-                
-            ),
-            # Test intersect JsonFile & dict
-            (
-                JsonFile(BASE_PATH / "intersect/intersect_1.json"),
-                {"key_1": "value_1", "key_3": "value_3", "key_8": "value_8"},
-
-                dict(JsonFile(BASE_PATH / "intersect/intersect_1.json").read().items() &\
-                    {"key_1": "value_1", "key_3": "value_3", "key_8": "value_8"}.items())
-            ),
-            # Test intersect dicts
-            (
-                {"key_1": "value_1", "key_2": "value_2", "key_3": "value_3"},
-                {"key_1": "value_1", "key_3": "value_3", "key_8": "value_8"},
-
-                dict({"key_1": "value_1", "key_2": "value_2", "key_3": "value_3"}.items() &\
-                {"key_1": "value_1", "key_3": "value_3", "key_8": "value_8"}.items())
-            )
-        ]
-    )
-    def test_intersect(self, file_or_dict_1, file_or_dict_2, expected_result):
-        assert JsonFile.intersect(file_or_dict_1, file_or_dict_2) == expected_result
+        root_tree = file.read_tree()
+        assert root_tree == test_tree
