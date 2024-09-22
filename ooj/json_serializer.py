@@ -1,3 +1,5 @@
+# (c) KiryxaTech, 2024. Apache License 2.0
+
 import json
 from typing import Any, List, Dict, Optional, Union, overload
 try:
@@ -13,6 +15,10 @@ from .json_file import JsonFile
 HANDLE_CYCLES = Literal["error", "ignore", "replace"]
 
 
+# КАК Я ХОЧУ ИЗМЕНИТЬ КЛАСС
+# TODO: Добавить возможность сериализовать классы с вложенными типами
+# TODO: Добавить поддержку использования объектов JSON: RootTree, Tree и Entry
+# TODO: Добавить новые методы сериализации
 class JsonSerializer:
     """A class for serializing and deserializing objects."""
 
@@ -30,16 +36,6 @@ class JsonSerializer:
         Parameters:
         - options (dict): Optional dictionary with settings.
         """
-
-        self._options: Dict[str, Any] = {
-            "encoding": encoding,
-            "ignore_errors": ignore_errors,
-            "transform_rules": transform_rules,
-            "indent": indent,
-            "include_fields": include_fields,
-            "exclude_fields": exclude_fields,
-            "handle_cycles": handle_cycles
-        }
 
         self._encoding: str = encoding
         self._ignore_errors: List[Exception] = ignore_errors
@@ -156,15 +152,6 @@ class JsonSerializer:
         - bool: True if the object is serializable, False otherwise.
         """
         return hasattr(obj, '__dict__')
-
-    def get_serialization_options(self) -> dict:
-        """
-        Getting current serialization and deserialization options.
-
-        Returns:
-        - dict: Dictionary of options.
-        """
-        return self._options
     
     def _handle_error(self, error: Exception):
         """
