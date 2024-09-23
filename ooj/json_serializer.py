@@ -2,10 +2,16 @@
 
 import json
 from jsonschema.protocols import Validator
-from typing import Any, List, Dict, Union
+from typing import Any, List, Dict, Union, Type
 from pathlib import Path
 
 from .json_objects import RootTree
+
+
+class Field:
+    def __init__(self, field_type: Type, types: Dict[str, Any] = None):
+        self.field_type = field_type
+        self.types = types
 
 
 class Schema:
@@ -30,6 +36,9 @@ class Schema:
             "required": self._required
         }
 
+    def get(self):
+        return self._schema
+
     @classmethod
     def load_from_file(self, fp: Union[str, Path]) -> 'Schema':
         with open(fp, 'r') as schema_file:
@@ -52,7 +61,8 @@ class Schema:
     
     def dump_to_file(self, fp: Union[str, Path]) -> None:
         with open(fp, 'w') as schema_file:
-            json.dump(self._schema, schema_file)
+            json.dump(self._schema, schema_file, indent=4)
+
 
 # КАК Я ХОЧУ ИЗМЕНИТЬ КЛАСС
 # Добавить поддержку использования объектов JSON: RootTree, Tree и Entry
@@ -67,8 +77,25 @@ class JsonSerializer:
         schema = {"$schema": schema_fp}
         return {**schema, **self._serialize(obj)}
 
-    def deserialize(self, types: dict) -> object:
-        pass
+    def deserialize(self, data: Dict[str, Any], cls: Type, types: Dict[str, Field]) -> object:
+        init_args = {}
+
+        for key, field in types.items():
+            if isinstance(field, Field):
+                if field.types is None:
+                    # Если это простое поле
+                    init_args[key] = data[key]
+                else:
+                    if isinstance(data[key], list):
+                        # Если это список объектов
+                        init_args[key] = [
+                            self._deserialize(item, field.field_type, field.types) for item in data[key]
+                        ]
+                    else:
+                        # Если это один вложенный объект
+                        init_args[key] = self.deserialize(data[key], field.field_type, field.types)
+
+        return cls(**init_args)
 
     def _serialize(self, obj: object) -> Dict[str, Any]:
         result = {}
