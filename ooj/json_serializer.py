@@ -1,6 +1,7 @@
 # (c) KiryxaTech, 2024. Apache License 2.0
 
 import json
+import jsonschema
 from jsonschema.protocols import Validator
 from typing import Any, List, Dict, Union, Type
 from pathlib import Path
@@ -75,7 +76,11 @@ class JsonSerializer:
 
     def serialize(self, obj: object, schema_fp: Union[str, Path] = None) -> Dict[str, Any]:
         schema = {"$schema": schema_fp}
-        return {**schema, **self._serialize(obj)}
+        serialized_data = {**schema, **self._serialize(obj)}
+
+        jsonschema.validate(serialized_data, self._schema.get())
+
+        return serialized_data
 
     def deserialize(self, data: Dict[str, Any], cls: Type, types: Dict[str, Field]) -> object:
         init_args = {}
