@@ -1,9 +1,8 @@
 # (c) KiryxaTech, 2024. Apache License 2.0
 
 import json
-import jsonschema
-from jsonschema import Validator
-from typing import Any, List, Dict, Optional, Union, overload
+from jsonschema.protocols import Validator
+from typing import Any, List, Dict, Union
 from pathlib import Path
 
 from .json_objects import RootTree
@@ -15,16 +14,16 @@ class Schema:
                  type: str = "object",
                  properties: Union[dict, RootTree] = None,
                  required: List[str] = None,
-                 version: str = "draft-8") -> None:
+                 version: str = "draft-07") -> None:
         
         self._title = title
         self._type = type
-        self._properties = dict(str(properties or {}))
+        self._properties = properties or {}
         self._version = version
         self._required = required or []
 
         self._schema = {
-            "$schema": "http://json-schema.org/draft-07/schema#",
+            "$schema": f"http://json-schema.org/{version}/schema#",
             "title": self._title,
             "type": self._type,
             "properties": self._properties,
@@ -64,11 +63,25 @@ class JsonSerializer:
     def __init__(self, schema: Union[Schema, str]):
         self._schema = schema
 
-    def serialize(self, obj: object) -> Dict[str, Any]:
-        pass
+    def serialize(self, obj: object, schema_fp: Union[str, Path] = None) -> Dict[str, Any]:
+        schema = {"$schema": schema_fp}
+        return {**schema, **self._serialize(obj)}
 
     def deserialize(self, types: dict) -> object:
         pass
+
+    def _serialize(self, obj: object) -> Dict[str, Any]:
+        result = {}
+
+        for key, value in obj.__dict__.items():
+            if isinstance(value, (list, tuple)):
+                result[key] = [self._serialize(item) for item in value]
+            elif hasattr(value, "__dict__"):
+                result[key] = self._serialize(value)
+            else:
+                result[key] = value
+
+        return result
 
 
 # HANDLE_CYCLES = Literal["error", "ignore", "replace"]
