@@ -65,21 +65,25 @@ class Schema:
             json.dump(self._schema, schema_file, indent=4)
 
 
-# TODO: Add support for using JSON objects: Root Tree, Tree and Record.
+# TODO: Add support for using JSON objects: RootTree, Tree and Entry.
 class JsonSerializer:
-    def __init__(self, schema: Union[Schema, str]):
+    def __init__(self, schema: Union[Schema, str] = None):
         self._schema = schema
 
     def serialize(self, obj: object, schema_fp: Union[str, Path] = None) -> Dict[str, Any]:
         schema = {"$schema": schema_fp}
         serialized_data = {**schema, **self._serialize(obj)}
 
-        jsonschema.validate(serialized_data, self._schema.get())
+        if not self._schema is None:
+            jsonschema.validate(serialized_data, self._schema.get())
 
         return serialized_data
 
-    def deserialize(self, data: Dict[str, Any], cls: Type, types: Dict[str, Field]) -> object:
+    def deserialize(self, data: Union[Dict[str, Any], RootTree], cls: Type, types: Dict[str, Field]) -> object:
         init_args = {}
+
+        if isinstance(data, RootTree):
+            data = data.to_dict()
 
         for key, field in types.items():
             if isinstance(field, Field):
