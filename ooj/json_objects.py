@@ -29,6 +29,9 @@ class Entry(JsonObject):
     def __str__(self):
         return str(self.to_dict())
     
+    def __iter__(self):
+        return iter(self.to_dict().items())
+    
     def to_dict(self):
         return {self.key: self.value}
 
@@ -102,4 +105,4 @@ class TreeConverter:
     
     @classmethod
     def to_dict(cls, json_object: Union[Entry, Tree, RootTree]) -> Dict:
-        return json_object.to_dict()
+        return dict(json_object)

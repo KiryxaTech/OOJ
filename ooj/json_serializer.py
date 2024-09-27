@@ -3,7 +3,7 @@
 import json
 import jsonschema
 from jsonschema.protocols import Validator
-from typing import Any, List, Dict, Union, Type
+from typing import Any, List, Dict, Union, Type, get_args
 from pathlib import Path
 
 from .json_objects import RootTree
@@ -65,52 +65,82 @@ class Schema:
             json.dump(self._schema, schema_file, indent=4)
 
 
-# TODO: Add support for using JSON objects: RootTree, Tree and Entry.
 class JsonSerializer:
     def __init__(self, schema: Union[Schema, str] = None):
         self._schema = schema
-
-    def serialize(self, obj: object, schema_fp: Union[str, Path] = None) -> Dict[str, Any]:
-        schema = {"$schema": schema_fp}
-        serialized_data = {**schema, **self._serialize(obj)}
-
-        if not self._schema is None:
-            jsonschema.validate(serialized_data, self._schema.get())
-
-        return serialized_data
-
-    def deserialize(self, data: Union[Dict[str, Any], RootTree], cls: Type, types: Dict[str, Field]) -> object:
-        init_args = {}
-
-        if isinstance(data, RootTree):
-            data = data.to_dict()
-
-        for key, field in types.items():
-            if isinstance(field, Field):
-                if field.types is None:
-                    # Если это простое поле
-                    init_args[key] = data[key]
-                else:
-                    if isinstance(data[key], list):
-                        # Если это список объектов
-                        init_args[key] = [
-                            self._deserialize(item, field.field_type, field.types) for item in data[key]
-                        ]
-                    else:
-                        # Если это один вложенный объект
-                        init_args[key] = self.deserialize(data[key], field.field_type, field.types)
-
-        return cls(**init_args)
-
-    def _serialize(self, obj: object) -> Dict[str, Any]:
-        result = {}
-
-        for key, value in obj.__dict__.items():
-            if isinstance(value, (list, tuple)):
-                result[key] = [self._serialize(item) for item in value]
-            elif hasattr(value, "__dict__"):
-                result[key] = self._serialize(value)
+    
+    def serialize(self,
+                  obj: object,
+                  schema_file_path: Union[str, Path] = None) -> Dict[str, Any]:
+        
+        seria = {}
+        if not schema_file_path is None:
+            seria["$schema"] = schema_file_path
+        
+        object_items = obj.__dict__.items()
+        for field_name, field_value in object_items:
+            if self.is_array(field_value):
+                seria[field_name] = [self.serialize(item) for item in field_value]
+            elif self.is_object(field_value):
+                seria[field_name] = self.serialize(field_value)
             else:
-                result[key] = value
+                seria[field_name] = field_value
 
-        return result
+        if not schema_file_path is None:
+            self.validate(seria, schema_file_path)
+        
+        return seria
+
+    def deserialize(self,
+                    seria: Union[Dict[str, Any], RootTree],
+                    seria_class: Type,
+                    seria_fields_types: Dict[str, Union[Type, Field]] = None) -> object:
+        
+        try:
+            seria.pop("$schema")
+        except: pass
+
+        parameters = {}
+        for key, value in seria.items():
+            print(f"Тип значения: {type(value)}")  # Вывод типа данных
+
+            if self.is_dict(value):
+                if isinstance(seria_fields_types[key], Field):
+                    nested_class = seria_fields_types[key].field_type
+                    nested_fields_types = seria_fields_types[key].types
+                else:
+                    nested_class = seria_fields_types[key]
+                    nested_fields_types = None
+                
+                parameters[key] = self.deserialize(value, nested_class, nested_fields_types)
+
+            elif self.is_array(value):
+                parameters[key] = []
+                array_item_type = get_args(seria_fields_types[key].field_type)[0]
+                for item in value:
+                    parameters[key].append(
+                        self.deserialize(item, array_item_type, seria_fields_types[key].types)
+                    )
+            else:
+                parameters[key] = value
+
+        return seria_class(**parameters)
+
+    def is_array(self, value: Any):
+        return isinstance(value, (list, tuple))
+    
+    def is_object(self, value: Any):
+        return hasattr(value, "__dict__")
+    
+    def is_dict(self, value):
+        return isinstance(value, dict)
+    
+    def validate(self,
+                 seria: Dict[str, Any],
+                 schema_file_path: Union[str, Path]):
+        
+        with open(schema_file_path, 'r') as file:
+            schema = json.load(file)
+
+        Validator.check_schema(schema)
+        jsonschema.validate(seria, schema)
