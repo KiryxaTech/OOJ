@@ -108,7 +108,7 @@ class Serializer:
     def deserialize(cls,
                     seria: Union[Dict[str, Any], RootTree],
                     seria_class: Type,
-                    seria_fields_types: Dict[str, Union[Type, 'Field']] = None) -> object:
+                    seria_fields_types: Dict[str, Union[Type, Field]] = None) -> object:
         
         seria.pop("$schema", None)
 
@@ -117,26 +117,24 @@ class Serializer:
 
         parameters = {}
         for key, value in seria.items():
+            if cls.__is_dict(value) or cls.__is_array(value):
+                field = seria_fields_types[key]
+
             if cls.__is_dict(value):
-                nested_class = seria_fields_types[key].type
-                nested_fields_types = seria_fields_types[key].types
-                
-                parameters[key] = cls.deserialize(value, nested_class, nested_fields_types)
-
+                parameters[key] = cls.deserialize(value, field.type, field.types)
             elif cls.__is_array(value):
-                parameters[key] = []
-
-                array_item_type = get_args(seria_fields_types[key].type)[0]
-                nested_types = seria_fields_types[key].types
-
-                for item in value:
-                    parameters[key].append(
-                        cls.deserialize(item, array_item_type, nested_types)
-                    )
+                array_item_type = cls.__extract_type(field.type)
+                parameters[key] = [cls.deserialize(item, array_item_type, field.types) for item in value]
             else:
                 parameters[key] = value
 
         return seria_class(**parameters)
+    
+    @classmethod
+    def __extract_type(cls, field_type: Type) -> Type:
+        if hasattr(field_type, '__origin__'):
+            return get_args(field_type)[0]
+        raise TypeError(f"{field_type} not supported.")
 
     @classmethod
     def __is_array(cls, value: Any) -> bool:
