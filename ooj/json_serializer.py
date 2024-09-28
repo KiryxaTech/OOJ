@@ -10,9 +10,23 @@ from .json_objects import RootTree
 
 
 class Field:
-    def __init__(self, cls: Type, types: Dict[str, Any] = None):
-        self.cls = cls
+    def __init__(self, type: Type, types: Dict[str, Any] = None):
+        self.type = type
         self.types = types
+
+    @classmethod
+    def wrap_field(cls, type: Type):
+        if isinstance(type, Field):
+            return type
+        return Field(type)
+    
+    @classmethod
+    def wrap_field_all(cls, fields: Dict[str, Type]):
+        wrapped_fields = {}
+        for key, field in fields.items():
+            wrapped_fields[key] = cls.wrap_field(field)
+
+        return wrapped_fields
 
 
 class Schema:
@@ -86,7 +100,7 @@ class Serializer:
                 seria[field_name] = field_value
 
         if schema_file_path is not None:
-            cls.__validate(seria, schema_file_path)
+            cls.validate(seria, schema_file_path)
         
         return seria
 
@@ -98,26 +112,23 @@ class Serializer:
         
         seria.pop("$schema", None)
 
+        if not seria_fields_types is None:
+            seria_fields_types = Field.wrap_field_all(seria_fields_types)
+
         parameters = {}
         for key, value in seria.items():
             if cls.__is_dict(value):
-                if isinstance(seria_fields_types[key], Field):
-                    nested_class = seria_fields_types[key].cls
-                    nested_fields_types = seria_fields_types[key].types
-                else:
-                    nested_class = seria_fields_types[key]
-                    nested_fields_types = None
+                nested_class = seria_fields_types[key].type
+                nested_fields_types = seria_fields_types[key].types
                 
                 parameters[key] = cls.deserialize(value, nested_class, nested_fields_types)
 
             elif cls.__is_array(value):
                 parameters[key] = []
-                if isinstance(seria_fields_types[key], Field):
-                    array_item_type = get_args(seria_fields_types[key].cls)[0]
-                    nested_types = seria_fields_types[key].types
-                else:
-                    array_item_type = get_args(seria_fields_types[key])[0]
-                    nested_types = None
+
+                array_item_type = get_args(seria_fields_types[key].type)[0]
+                nested_types = seria_fields_types[key].types
+
                 for item in value:
                     parameters[key].append(
                         cls.deserialize(item, array_item_type, nested_types)
@@ -140,9 +151,9 @@ class Serializer:
         return isinstance(value, dict)
     
     @classmethod
-    def __validate(cls,
-                   seria: Dict[str, Any],
-                   schema_file_path: Union[str, Path]):
+    def validate(cls,
+                 seria: Dict[str, Any],
+                 schema_file_path: Union[str, Path]):
         
         with open(schema_file_path, 'r') as file:
             schema = json.load(file)
