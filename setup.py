@@ -1,16 +1,15 @@
+# (c) KiryxaTech, 2024. Apache License 2.0
+
 from io import open
 from setuptools import setup
 
-"""
-:authors: KiryxaTech
-:license Apache License, Version 2.0, see LICENSE file
-:copyright: (c) 2024 KiryxaTech
-"""
 
-version = "0.0.4"
+version = "0.1.0"
+
 
 with open('README.md', encoding='utf-8') as f:
     long_discription = f.read()
+
 
 setup(
     name='ooj',
@@ -19,8 +18,10 @@ setup(
     author='KiryxaTech',
     author_email='kiryxatech@gmail.com',
 
-    description=(u'OOJ (Object Oriented JSON) is a Python library designed to simplify working with JSON data. '
-                 u'It allows you to create, process, and interact with JSON data using an object-oriented approach.'),
+    description=(u'Object-Oriented JSON (OOJ) is a universal library'
+                 u'for working with JSON in Python, providing simplicity'
+                 u'and convenience in serializing and deserializing'
+                 u'complex objects.'),
     long_description=long_discription,
     long_description_content_type='text/markdown',
 
