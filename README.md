@@ -1,7 +1,7 @@
 <div align="center">
     <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="doc/images/libDarkImage.png">
-        <img src="./doc/images/libLightImage.png">
+        <source media="(prefers-color-scheme: dark)" srcset="./docs/project-logo/OOJ.png">
+        <img src="./docs/project-logo/OOJ.png" style="max-width: 600px; height: auto;">
     </picture>
 
 ![PyPI](https://img.shields.io/pypi/v/ooj)
@@ -10,103 +10,104 @@
 ![PyPI - License](https://img.shields.io/badge/license-Apache2.0-blue)
 </div>
 
----
 
-The `OOJ` library is a Python package that simplifies working with JSON files. It provides methods to read, write, add, remove, and replace elements in a JSON file.
+`Object-Oriented JSON (OOJ)` is a universal library for working with JSON in Python, providing simplicity and convenience in serializing and deserializing complex objects.
+
+## Table of Contents
+
+- [Installation](#installation)
+- [Core Classes](#core-classes)
+- [Usage Example](#usage-example)
+- [Support for Nested Types](#support-for-nested-types)
+- [License](#license)
 
 ## Installation
 
-You can install the `OOJ` library directly from PyPI:
+Install the library via `pip`:
 
-### On Windows:
 ```bash
 pip install ooj
 ```
 
-### On Linux/MacOS:
-```bash
-pip3 install ooj
-```
+## Core Classes
 
-## Usage
-### Import library
-```python
-import ooj
-```
+### `JsonEntity`
 
-### Working with JsonFile
-#### Creating a JsonFile object
-Create a `JsonFile` object:
-```python
-my_file = ooj.JsonFile('your/path/to/file.json')
-```
+An abstract class representing the base for all JSON objects. It provides methods for converting objects to a dictionary and checking their equality.
 
-#### Read and write
-Read or write:
+### `Entry`
+
+A class representing a key-value pair in JSON. It implements methods for serialization to a dictionary and comparison.
+
+### `BaseTree`
+
+A class representing a tree of JSON objects. It supports adding and removing elements and serializing to a dictionary.
+
+### `RootTree` and `Tree`
+
+Classes extending `BaseTree` that provide structuring for nested objects.
+
+### `TreeConverter`
+
+A class for converting JSON data into `RootTree` and `Tree` structures.
+
+## Usage Example
+
 ```python
-data = {
- "name": "Jane",
- "age": 22,
- "is_happy": True
+from ooj import TreeConverter
+
+json_data = {
+    "name": "Alice",
+    "age": 30,
+    "address": {
+        "street": "123 Main St",
+        "city": "Anytown"
+    }
 }
 
-my_file.write(data)
-
-print(my_file.read())
-
-PS:
->>> {
->>>     "name": "Jane",
->>>     "age": 22,
->>>     "is_happy": True
->>> }
+root_tree = TreeConverter.to_root_tree(json_data)
+print(root_tree)
 ```
 
-#### Sampling
+## Support for Nested Types
+
+The OOJ library supports deserializing complex nested types, allowing you to easily handle structures with arbitrary nesting. When serializing and deserializing, you can use annotations to specify data types, simplifying the work with custom objects and arrays.
+
+Example:
+
 ```python
-data = {
- "1": -7,
- "2": 3,
- "3": 9
-}
+from ooj import Serializer
 
-my_file.write(data)
-selected_keys_dict = my_file.select(range(0, 10))
-print(selected_keys_dict)
+class Address(JsonEntity):
+    def __init__(self, street: str, city: str):
+        self.street = street
+        self.city = city
 
-PS:
->>> {"2": 3, "3": 9}
-```
+    def to_dict(self):
+        return {
+            "street": self.street,
+            "city": self.city
+        }
 
-### Create serialization
-You can serialize and deserialize objects.
-#### Creating a serializer
-```python
-from ooj import JsonSerializer
-from ooj.excptions import NotSerializableError
-
-# Options for serialization
-options = {
-    "indent": 4,
-    "ignore_errors": NotSerializableError
-}
-
-serializer = JsonSerializer(options=options)
-```
-
-#### Serialize the object
-```python
-class Person:
-    def __init__(self, name, age):
+class Person(JsonEntity):
+    def __init__(self, name: str, age: int, address: Address):
         self.name = name
         self.age = age
+        self.address = address
 
-serialized_person = serializer.serialize(Person("Mike", 29))
-print(serialized_person)
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "age": self.age,
+            "address": self.address.to_dict()
+        }
 
-PS:
->>> {
->>>     'name': 'Mike',
->>>     'age': 29
->>> }
+address = Address("123 Main St", "Anytown")
+person = Person("Alice", 30, address)
+json_dict = person.to_dict()
+print(json_dict)
 ```
+
+## License
+
+This project is licensed under the Apache 2.0 License. See the `LICENSE` file for more information.
