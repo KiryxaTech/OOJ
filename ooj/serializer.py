@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Type, Optional, Union, get_args
+from typing import Any, Dict, List, Type, Optional, Union, get_args, get_origin
 
 import jsonschema
 import jsonschema.exceptions
@@ -10,6 +10,7 @@ from jsonschema.protocols import Validator
 
 from .entities import RootTree
 from .exceptions.exceptions import SchemaException, ValidationException
+
 
 class Field:
     """
@@ -32,8 +33,8 @@ class Field:
                 field types (default is None).
         """
 
-        if not isinstance(type_, type):
-            raise TypeError(f"'{type_.__class__.__qualname__}' should be a type, not an instance.")
+        # if not type_ == type and type_ == list:
+        #     raise TypeError(f"'{type_.__class__.__qualname__}' should be a type, not an instance.")
         
         if not isinstance(types, dict) and not types is None:
             raise TypeError(f"The {types} is not a dictionary.")
@@ -276,7 +277,7 @@ class Serializer:
 
         Args:
             seria (Union[Dict[str, Any], RootTree]): The serialized dictionary or RootTree to deserialize.
-            seria_class (Type): The class of the object to create.
+            seria_type (Type): The class of the object to create.
             seria_fields_types (Optional[Dict[str, Union[Type, Field]]]): Optional mapping of field names to types.
 
         Returns:
@@ -291,18 +292,36 @@ class Serializer:
         parameters = {}
         for key, value in seria.items():
             if cls.__is_dict(value) or cls.__is_array(value):
-                field = seria_fields_types[key]
+                if seria_fields_types is not None:
+                    field = seria_fields_types[key]
+                else:
+                    field = Field(dict)
 
             if cls.__is_dict(value):
-                parameters[key] = cls.deserialize(value, field.type, field.types)
+                if cls.__has_annotations(seria_type):
+                    field_type: Type = seria_type.__init__.__annotations__.get(key, field.type)
+                    field_types = field_type.__init__.__annotations__
+                else:
+                    field_types = field.types
+
+                parameters[key] = cls.deserialize(value, field_type, field_types)
+            
             elif cls.__is_array(value):
-                array_item_type = cls.__extract_type(field.type)
+                if cls.__has_annotations(seria_type):
+                    array_type = seria_type.__init__.__annotations__.get(key, field.type)
+                else:
+                    array_type = field.type
+
+                item_type = cls.__extract_type(array_type)
+                
+                # Проверяем, является ли массив пустым
+                if not isinstance(value, list):
+                    raise ValueError(f"Expected a list for field '{key}', got {type(value).__name__}")
+
                 parameters[key] = [
-                    cls.deserialize(
-                        item,
-                        array_item_type,
-                        field.types
-                    ) for item in value]
+                    cls.deserialize(item, item_type, field.types) for item in value if item is not None
+                ]
+
             else:
                 parameters[key] = value
 
@@ -333,6 +352,10 @@ class Serializer:
             raise SchemaException(e)
         except jsonschema.exceptions.ValidationError as e:
             raise ValidationException(e)
+
+    @staticmethod
+    def __has_annotations(seria_type):
+        return hasattr(seria_type.__init__, "__annotations__")
 
     @classmethod
     def __extract_type(cls, field_type: Type) -> Type:
