@@ -8,7 +8,9 @@ from .exceptions.exceptions import (SchemaException,
                                     ValidationException,
                                     FileExtensionException)
 from .file import JsonFile
-from .serializer import (Field, Schema, Serializer)
+from .serializer import Serializer
+from .schema import Schema
+from .field import Field
 from .url import JsonURL
 
 __all__ = [

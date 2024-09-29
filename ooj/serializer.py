@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Type, Optional, Union, get_args, get_origin
+from typing import Any, Dict, List, Type, Optional, Union, get_args
 
 import jsonschema
 import jsonschema.exceptions
@@ -10,180 +10,7 @@ from jsonschema.protocols import Validator
 
 from .entities import RootTree
 from .exceptions.exceptions import SchemaException, ValidationException
-
-
-class Field:
-    """
-    A class to represent a field in a data structure, encapsulating its type 
-    and any nested types for deserialization purposes.
-
-    Attributes:
-        type_ (Type): The type of the field.
-        types (Optional[Dict[str, Union[Type, Field]]]): A dictionary of nested 
-            field types, if any.
-    """
-
-    def __init__(self, type_: Type, types: Optional[Dict[str, Union[Type, 'Field']]] = None):
-        """
-        Initializes a Field instance.
-
-        Args:
-            type_ (Type): The type of the field.
-            types (Optional[Dict[str, Union[Type, 'Field']]]): A dictionary of nested 
-                field types (default is None).
-        """
-
-        if not isinstance(types, dict) and not types is None:
-            raise TypeError(f"The {types} is not a dictionary.")
-
-        self.type = type_
-        self.types = types
-
-    @classmethod
-    def wrap_type(cls, type_: Union[Type, 'Field']) -> 'Field':
-        """
-        Wraps the given type in a Field instance if it is not already wrapped.
-
-        Args:
-            type_ (Union[Type, 'Field']): The type to be wrapped.
-
-        Returns:
-            Field: A Field instance wrapping the given type.
-        """
-        if isinstance(type_, Field):
-            return type_
-        return Field(type_)
-
-    @classmethod
-    def wrap_all_types(cls, types: Dict[str, Union[Type, 'Field']]) -> Dict[str, 'Field']:
-        """
-        Wraps all types in the provided dictionary in Field instances.
-
-        Args:
-            types (Dict[str, Union[Type, 'Field']]): A dictionary of types to be wrapped.
-
-        Returns:
-            Dict[str, Field]: A dictionary with types wrapped in Field instances.
-        """
-        wrapped_types = {}
-        for key, type_ in types.items():
-            wrapped_types[key] = cls.wrap_type(type_)
-
-        return wrapped_types
-
-
-class Schema:
-    """
-    A class representing a JSON Schema.
-
-    Attributes:
-        title (str): The title of the schema.
-        type_ (Optional[str]): The type of the schema. Defaults to "object".
-        properties (Optional[Dict[str, Any]]): The properties of the schema.
-        required (Optional[List[str]]): The required properties of the schema.
-        version (Optional[str]): The version of the schema. Defaults to "draft-07".
-        _schema (Dict[str, Any]): The internal representation of the JSON schema.
-
-    Methods:
-        to_dict() -> Dict[str, Any]:
-            Converts the schema to a dictionary format.
-        
-        load_from_file(file_path: Union[str, Path]) -> 'Schema':
-            Loads a schema from a JSON file and returns a Schema instance.
-        
-        dump_to_file(file_path: Union[str, Path]) -> None:
-            Dumps the schema to a JSON file.
-        
-        _get_version(schema_link: str) -> str:
-            Extracts the version from the schema link.
-    """
-
-    def __init__(
-        self,
-        title: str,
-        type_: Optional[str] = "object",
-        properties: Optional[Dict[str, Any]] = None,
-        required: Optional[List[str]] = None,
-        version: Optional[str] = "draft-07"
-    ) -> None:
-        """Initializes a Schema instance with the provided attributes.
-
-        Args:
-            title (str): The title of the schema.
-            type_ (Optional[str]): The type of the schema. Defaults to "object".
-            properties (Optional[Dict[str, Any]]): The properties of the schema. Defaults to an empty dictionary.
-            required (Optional[List[str]]): The required properties of the schema. Defaults to an empty list.
-            version (Optional[str]): The version of the schema. Defaults to "draft-07".
-        """
-        
-        self._title = title
-        self._type = type_
-        self._properties = properties or {}
-        self._version = version
-        self._required = required or []
-
-        self._schema = {
-            "$schema": f"http://json-schema.org/{version}/schema#",
-            "title": self._title,
-            "type": self._type,
-            "properties": self._properties,
-            "required": self._required
-        }
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Converts the schema to a dictionary format.
-        
-        Returns:
-            Dict[str, Any]: The JSON schema as a dictionary.
-        """
-        return self._schema
-
-    @classmethod
-    def load_from_file(cls, file_path: Union[str, Path]) -> 'Schema':
-        """Loads a schema from a JSON file and returns a Schema instance.
-
-        Args:
-            file_path (Union[str, Path]): The path to the JSON file containing the schema.
-
-        Returns:
-            Schema: A Schema instance representing the loaded schema.
-        """
-        with open(file_path, 'r') as schema_file:
-            schema_dict = json.load(schema_file)
-        
-        Validator.check_schema(schema_dict)
-
-        schema = Schema(
-            title=schema_dict["title"],
-            type_=schema_dict["type"],
-            properties=schema_dict["properties"],
-            required=schema_dict["required"],
-            version=cls._get_version(schema_dict["$schema"])
-        )
-
-        return schema
-    
-    def dump_to_file(self, file_path: Union[str, Path]) -> None:
-        """Dumps the schema to a JSON file.
-
-        Args:
-            file_path (Union[str, Path]): The path to the JSON file where the schema will be dumped.
-        """
-        with open(file_path, 'w') as schema_file:
-            json.dump(self._schema, schema_file, indent=4)
-
-    def _get_version(self, schema_link: str) -> str:
-        """Extracts the version from the schema link.
-
-        Args:
-            schema_link (str): The schema link from which to extract the version.
-
-        Returns:
-            str: The extracted version of the schema.
-        """
-        SCHEMA_VERSION_INDEX = -2
-        schema_version = schema_link.split('/')[SCHEMA_VERSION_INDEX]
-        return schema_version
+from .field import Field
 
 
 class Serializer:
@@ -226,7 +53,6 @@ class Serializer:
         print(deserialized_object.name)  # Output: Alice
         print(deserialized_object.age)   # Output: 30
         ```
-
     """
 
     @classmethod
