@@ -106,6 +106,8 @@ class Serializer:
         Returns:
             object: An instance of the specified class with the deserialized data.
         """
+        if isinstance(seria, RootTree):
+            seria = seria.to_dict()
         
         seria.pop("$schema", None)
 
