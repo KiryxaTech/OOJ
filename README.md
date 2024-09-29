@@ -1,7 +1,7 @@
 <div align="center">
     <picture>
         <source media="(prefers-color-scheme: dark)" srcset="./docs/project-logo/OOJ.png">
-        <img src="./docs/project-logo/OOJ.png" style="max-width: 600px; height: auto;">
+        <img src="./docs/project-logo/OOJ.png">
     </picture>
 
 ![PyPI](https://img.shields.io/pypi/v/ooj)
