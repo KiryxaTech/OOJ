@@ -33,9 +33,6 @@ class Field:
                 field types (default is None).
         """
 
-        # if not type_ == type and type_ == list:
-        #     raise TypeError(f"'{type_.__class__.__qualname__}' should be a type, not an instance.")
-        
         if not isinstance(types, dict) and not types is None:
             raise TypeError(f"The {types} is not a dictionary.")
 
@@ -291,41 +288,47 @@ class Serializer:
 
         parameters = {}
         for key, value in seria.items():
-            if cls.__is_dict(value) or cls.__is_array(value):
-                if seria_fields_types is not None:
-                    field = seria_fields_types[key]
-                else:
-                    field = Field(dict)
+            field = cls.__get_field_type(key, value, seria_fields_types, seria_type)
 
             if cls.__is_dict(value):
-                if cls.__has_annotations(seria_type):
-                    field_type: Type = seria_type.__init__.__annotations__.get(key, field.type)
-                    field_types = field_type.__init__.__annotations__
-                else:
-                    field_types = field.types
-
-                parameters[key] = cls.deserialize(value, field_type, field_types)
-            
+                parameters[key] = cls.deserialize_dict(value, field)
             elif cls.__is_array(value):
-                if cls.__has_annotations(seria_type):
-                    array_type = seria_type.__init__.__annotations__.get(key, field.type)
-                else:
-                    array_type = field.type
-
-                item_type = cls.__extract_type(array_type)
-                
-                # Проверяем, является ли массив пустым
-                if not isinstance(value, list):
-                    raise ValueError(f"Expected a list for field '{key}', got {type(value).__name__}")
-
-                parameters[key] = [
-                    cls.deserialize(item, item_type, field.types) for item in value if item is not None
-                ]
-
+                parameters[key] = cls.deserialize_array(value, field)
             else:
                 parameters[key] = value
 
         return seria_type(**parameters)
+
+    @classmethod
+    def __get_field_type(cls, key: str, value: Any, seria_fields_types: Optional[Dict[str, Union[Type, Field]]], seria_type: Type) -> Type:
+        """Gets the field type based on the serialized value and class annotations."""
+        if seria_fields_types is not None:
+            field = seria_fields_types.get(key, Field(None))
+        else:
+            field = Field(None)
+
+        field_type = field.type
+
+        if cls.__has_annotations(seria_type):
+            field_type = seria_type.__init__.__annotations__.get(key, field_type)
+
+        return field_type
+
+    @classmethod
+    def deserialize_dict(cls, value: Dict[str, Any], field: Type) -> object:
+        """Deserializes a dictionary using the specified field type."""
+        if field is None:
+            return value
+        return cls.deserialize(value, field, field.__init__.__annotations__ if cls.__has_annotations(field) else {})
+
+    @classmethod
+    def deserialize_array(cls, value: List[Any], field: Type) -> List[Any]:
+        """Deserializes an array using the specified field type."""
+        item_type = cls.__extract_type(field)
+        return [
+            cls.deserialize(item, item_type, field.__init__.__annotations__ if cls.__has_annotations(field) else {})
+            for item in value if item is not None
+        ]
     
     @classmethod
     def validate(
@@ -357,8 +360,8 @@ class Serializer:
     def __has_annotations(seria_type):
         return hasattr(seria_type.__init__, "__annotations__")
 
-    @classmethod
-    def __extract_type(cls, field_type: Type) -> Type:
+    @staticmethod
+    def __extract_type(field_type: Type) -> Type:
         """Extracts the type from a generic type.
 
         Args:
@@ -374,8 +377,8 @@ class Serializer:
             return get_args(field_type)[0]
         raise TypeError(f"{field_type} not supported.")
 
-    @classmethod
-    def __is_array(cls, value: Any) -> bool:
+    @staticmethod
+    def __is_array(value: Any) -> bool:
         """Checks if the given value is an array (list or tuple).
 
         Args:
@@ -386,8 +389,8 @@ class Serializer:
         """
         return isinstance(value, (list, tuple))
     
-    @classmethod
-    def __is_object(cls, value: Any) -> bool:
+    @staticmethod
+    def __is_object(value: Any) -> bool:
         """Checks if the given value is an object.
 
         Args:
@@ -398,8 +401,8 @@ class Serializer:
         """
         return hasattr(value, "__dict__")
     
-    @classmethod
-    def __is_dict(cls, value: Any) -> bool:
+    @staticmethod
+    def __is_dict(value: Any) -> bool:
         """Checks if the given value is a dictionary.
 
         Args:
