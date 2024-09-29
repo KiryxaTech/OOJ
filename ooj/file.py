@@ -30,7 +30,7 @@ class JsonFile(JsonBase, Readable, Writable):
 
         JsonBase.__init__(self, {})
         Readable.__init__(self, self._fp)
-        Readable.__init__(self, self._fp)
+        Writable.__init__(self, self._fp)
 
         # Checking the file path for the validity of the extension.
         if not str(self._fp).endswith(".json"):
