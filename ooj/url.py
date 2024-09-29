@@ -1,4 +1,4 @@
-# (c) KiryxaTech 2024. Apache License 2.0
+# (c) KiryxaTech, 2024. Apache License 2.0
 
 import re
 import requests
@@ -6,10 +6,10 @@ import json
 from typing import Union, Optional, List, Dict
 from pathlib import Path
 
-from . import JsonBaseClass, JsonFile
+from . import JsonBase, JsonFile
 
 
-class JsonURL(JsonBaseClass):
+class JsonURL(JsonBase):
     """
     A class to load JSON data from a URL and optionally save it to a file.
 

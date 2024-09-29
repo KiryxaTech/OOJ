@@ -1,7 +1,7 @@
 import pytest
 from pathlib import Path
 from ooj.file import JsonFile
-from ooj.objets import RootTree, Tree, Entry
+from ooj.entities import RootTree, Tree, Entry
 
 # Базовый путь для тестов JSON файлов
 BASE_PATH = Path('tests/files/test_json_files')

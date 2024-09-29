@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Type, Optional, Union, get_args
 import jsonschema
 from jsonschema.protocols import Validator
 
-from .objets import RootTree
+from .entities import RootTree
 
 
 class Field:

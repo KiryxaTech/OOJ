@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Union
 
-from .objets import RootTree, TreeConverter
+from .entities import RootTree, TreeConverter
 
 
 class Readable(ABC):
