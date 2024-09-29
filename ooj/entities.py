@@ -19,9 +19,6 @@ class JsonEntity(ABC):
 
 
 class Entry(JsonEntity):
-    """
-    Представляет пару ключ-значение.
-    """
     def __init__(self, key: str, value: Any) -> None:
         self.key = key
         self.value = value
@@ -79,11 +76,9 @@ class TreeConverter:
         
         for key, value in json_data.items():
             if isinstance(value, dict):
-                # Рекурсивно обрабатываем словари для вложенных деревьев
                 subtree = cls.to_tree(key, value)
                 root_tree.add(subtree)
             else:
-                # Добавляем пары ключ-значение в RootTree
                 root_tree.add(Entry(key, value))
 
         return root_tree
@@ -94,11 +89,9 @@ class TreeConverter:
         
         for entry_key, entry_value in json_data.items():
             if isinstance(entry_value, dict):
-                # Рекурсивно создаем поддерево
                 subtree = cls.to_tree(entry_key, entry_value)
                 tree.add(subtree)
             else:
-                # Добавляем обычные записи
                 tree.add(Entry(entry_key, entry_value))
         
         return tree
