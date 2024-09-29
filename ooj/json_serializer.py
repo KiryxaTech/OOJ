@@ -1,237 +1,375 @@
+# (c) KiryxaTech, 2024. Apache License 2.0
+
 import json
-from typing import Any, List, Dict, Optional, Union, overload
-try:
-    from typing import Literal
-except:
-    from typing_extensions import Literal
+from pathlib import Path
+from typing import Any, Dict, List, Type, Optional, Union, get_args
 
-from .exceptions.exceptions import NotSerializableException, CyclicFieldError
+import jsonschema
+from jsonschema.protocols import Validator
 
-from .json_file import JsonFile
+from .json_objects import RootTree
 
 
-HANDLE_CYCLES = Literal["error", "ignore", "replace"]
+class Field:
+    """
+    A class to represent a field in a data structure, encapsulating its type 
+    and any nested types for deserialization purposes.
 
+    Attributes:
+        type_ (Type): The type of the field.
+        types (Optional[Dict[str, Union[Type, Field]]]): A dictionary of nested 
+            field types, if any.
+    """
 
-class JsonSerializer:
-    """A class for serializing and deserializing objects."""
-
-    def __init__(self,
-                 encoding: Optional[str] = "utf-8",
-                 ignore_errors: Optional[List[Exception]] = [],
-                 transform_rules: Optional[Dict[str, Any]] = {},
-                 indent: Optional[int] = 4,
-                 include_fields: Optional[List[Dict[str, Any]]] = [],
-                 exclude_fields: Optional[List[Dict[str, Any]]] = [],
-                 handle_cycles: Optional[HANDLE_CYCLES] = "error") -> None:
+    def __init__(self, type_: Type, types: Optional[Dict[str, Union[Type, 'Field']]] = None):
         """
-        Initializing serialization settings.
+        Initializes a Field instance.
 
-        Parameters:
-        - options (dict): Optional dictionary with settings.
+        Args:
+            type_ (Type): The type of the field.
+            types (Optional[Dict[str, Union[Type, 'Field']]]): A dictionary of nested 
+                field types (default is None).
         """
+        self.type = type_
+        self.types = types
 
-        self._options: Dict[str, Any] = {
-            "encoding": encoding,
-            "ignore_errors": ignore_errors,
-            "transform_rules": transform_rules,
-            "indent": indent,
-            "include_fields": include_fields,
-            "exclude_fields": exclude_fields,
-            "handle_cycles": handle_cycles
+    @classmethod
+    def wrap_type(cls, type_: Union[Type, 'Field']) -> 'Field':
+        """
+        Wraps the given type in a Field instance if it is not already wrapped.
+
+        Args:
+            type_ (Union[Type, 'Field']): The type to be wrapped.
+
+        Returns:
+            Field: A Field instance wrapping the given type.
+        """
+        if isinstance(type_, Field):
+            return type_
+        return Field(type_)
+
+    @classmethod
+    def wrap_all_types(cls, types: Dict[str, Union[Type, 'Field']]) -> Dict[str, 'Field']:
+        """
+        Wraps all types in the provided dictionary in Field instances.
+
+        Args:
+            types (Dict[str, Union[Type, 'Field']]): A dictionary of types to be wrapped.
+
+        Returns:
+            Dict[str, Field]: A dictionary with types wrapped in Field instances.
+        """
+        wrapped_types = {}
+        for key, type_ in types.items():
+            wrapped_types[key] = cls.wrap_type(type_)
+
+        return wrapped_types
+
+
+class Schema:
+    """
+    A class representing a JSON Schema.
+
+    Attributes:
+        title (str): The title of the schema.
+        type_ (Optional[str]): The type of the schema. Defaults to "object".
+        properties (Optional[Dict[str, Any]]): The properties of the schema.
+        required (Optional[List[str]]): The required properties of the schema.
+        version (Optional[str]): The version of the schema. Defaults to "draft-07".
+        _schema (Dict[str, Any]): The internal representation of the JSON schema.
+
+    Methods:
+        to_dict() -> Dict[str, Any]:
+            Converts the schema to a dictionary format.
+        
+        load_from_file(file_path: Union[str, Path]) -> 'Schema':
+            Loads a schema from a JSON file and returns a Schema instance.
+        
+        dump_to_file(file_path: Union[str, Path]) -> None:
+            Dumps the schema to a JSON file.
+        
+        _get_version(schema_link: str) -> str:
+            Extracts the version from the schema link.
+    """
+
+    def __init__(
+        self,
+        title: str,
+        type_: Optional[str] = "object",
+        properties: Optional[Dict[str, Any]] = None,
+        required: Optional[List[str]] = None,
+        version: Optional[str] = "draft-07"
+    ) -> None:
+        """Initializes a Schema instance with the provided attributes.
+
+        Args:
+            title (str): The title of the schema.
+            type_ (Optional[str]): The type of the schema. Defaults to "object".
+            properties (Optional[Dict[str, Any]]): The properties of the schema. Defaults to an empty dictionary.
+            required (Optional[List[str]]): The required properties of the schema. Defaults to an empty list.
+            version (Optional[str]): The version of the schema. Defaults to "draft-07".
+        """
+        
+        self._title = title
+        self._type = type_
+        self._properties = properties or {}
+        self._version = version
+        self._required = required or []
+
+        self._schema = {
+            "$schema": f"http://json-schema.org/{version}/schema#",
+            "title": self._title,
+            "type": self._type,
+            "properties": self._properties,
+            "required": self._required
         }
 
-        self._encoding: str = encoding
-        self._ignore_errors: List[Exception] = ignore_errors
-        self._transform_rules: Dict[str, Any] = transform_rules
-        self._indent: int = indent
-        self._include_fields: List[Dict[str, Any]] = include_fields
-        self._exclude_fields: List[Dict[str, Any]] = exclude_fields
-        self._handle_cycles: HANDLE_CYCLES = handle_cycles
-    
-    def serialize(self, obj: object) -> str:
-        """
-        Converting an object to a JSON string.
-
-        Parameters:
-        - obj (object): Serializable object.
-
-        Returns:
-        - str: Serialized JSON string.
-        """
-        if self.is_serializable(obj):
-            obj = self._include_fields_to_obj(obj)
-            obj = self._apply_transform_rules(obj)
-            obj = self._exclude_fields_to_obj(obj)
-            obj = self._handling_cycling_fields(obj)
-
-            return json.dumps(obj.__dict__, indent=self._indent)
+    def to_dict(self) -> Dict[str, Any]:
+        """Converts the schema to a dictionary format.
         
-        self._handle_error(NotSerializableException)
-    
-    def deserialize(self, json_str: str, cls: type) -> object:
+        Returns:
+            Dict[str, Any]: The JSON schema as a dictionary.
         """
-        Converts a JSON string into an object of the specified class.
+        return self._schema
 
-        Parameters:
-        - json_str (str): JSON string.
-        - cls (type): Target class type.
+    @classmethod
+    def load_from_file(cls, file_path: Union[str, Path]) -> 'Schema':
+        """Loads a schema from a JSON file and returns a Schema instance.
+
+        Args:
+            file_path (Union[str, Path]): The path to the JSON file containing the schema.
 
         Returns:
-        - object: Deserialized object.
+            Schema: A Schema instance representing the loaded schema.
         """
-        if self.is_serializable(cls):
-            data = json.loads(json_str)
-
-            obj = cls.__new__(cls)
-            for name, value in data.items():
-                setattr(obj, name, value)
-
-            return obj
+        with open(file_path, 'r') as schema_file:
+            schema_dict = json.load(schema_file)
         
-        self._handle_error(NotSerializableException)
+        Validator.check_schema(schema_dict)
+
+        schema = Schema(
+            title=schema_dict["title"],
+            type_=schema_dict["type"],
+            properties=schema_dict["properties"],
+            required=schema_dict["required"],
+            version=cls._get_version(schema_dict["$schema"])
+        )
+
+        return schema
     
-    @overload
-    def serealize_to_file(self, obj: object, file_path: str) -> None: ...
+    def dump_to_file(self, file_path: Union[str, Path]) -> None:
+        """Dumps the schema to a JSON file.
 
-    @overload
-    def serealize_to_file(self, obj: object, json_file: JsonFile) -> None: ...
-
-    def serialize_to_file(self, obj: object, file_path_or_json_file: Union[str, JsonFile]) -> None:
+        Args:
+            file_path (Union[str, Path]): The path to the JSON file where the schema will be dumped.
         """
-        Saving a JSON representation of an object to a file.
+        with open(file_path, 'w') as schema_file:
+            json.dump(self._schema, schema_file, indent=4)
 
-        Parameters:
-        - obj (object): Serializable object.
-        - file_path (str): Path to the file.
-        """
-        if self.is_serializable(obj):
-            obj = self._include_fields_to_obj(obj)
-            obj = self._exclude_fields_to_obj(obj)
-            obj = self._apply_transform_rules(obj)
-            obj = self._handling_cycling_fields(obj)
+    def _get_version(self, schema_link: str) -> str:
+        """Extracts the version from the schema link.
 
-            if isinstance(file_path_or_json_file, str):
-                with open(file_path_or_json_file, 'w', encoding=self._encoding) as json_file:
-                    json.dump(obj.__dict__, json_file, indent=self._indent)
-            elif isinstance(file_path_or_json_file, JsonFile):
-                file_path_or_json_file.write(obj.__dict__)
-        else:
-            self._handle_error(NotSerializableException)
-
-    def deserialize_from_file(self, file_path_or_json_file: Union[str, JsonFile], cls: type) -> object:
-        """
-        Loading an object from a JSON file.
-
-        Parameters:
-        - file_path (str): Path to the file.
-        - cls (type): Target class type.
+        Args:
+            schema_link (str): The schema link from which to extract the version.
 
         Returns:
-        - object: Deserialized object.
+            str: The extracted version of the schema.
         """
-        if self.is_serializable(cls):
-            if isinstance(file_path_or_json_file, str):
-                with open(file_path_or_json_file, 'r', encoding=self._encoding) as serealize_data_file:
-                    data = json.load(serealize_data_file)
-            elif isinstance(file_path_or_json_file, JsonFile):
-                data = file_path_or_json_file.read()
+        SCHEMA_VERSION_INDEX = -2
+        schema_version = schema_link.split('/')[SCHEMA_VERSION_INDEX]
+        return schema_version
 
-            obj = cls.__new__(cls)
-            for name, value in data.items():
-                setattr(obj, name, value)
 
-            return obj
+class Serializer:
+    """
+    A class for serializing and deserializing objects to and from JSON format.
+
+    Methods:
+        serialize(obj: object, schema_file_path: Optional[Union[str, Path]] = None) -> Dict[str, Any]:
+            Serializes an object into a JSON-compatible dictionary format.
         
-        self._handle_error(NotSerializableException)
-    
-    def is_serializable(self, obj: object) -> bool:
-        """
-        Checking if an object can be serialized.
-
-        Parameters:
-        - obj (object): Object to check.
-
-        Returns:
-        - bool: True if the object is serializable, False otherwise.
-        """
-        return hasattr(obj, '__dict__')
-
-    def get_serialization_options(self) -> dict:
-        """
-        Getting current serialization and deserialization options.
-
-        Returns:
-        - dict: Dictionary of options.
-        """
-        return self._options
-    
-    def _handle_error(self, error: Exception):
-        """
-        Handling and logging errors that occur during serialization and deserialization.
-
-        Parameters:
-        - error (Exception): Error to be handled.
-        """
-        if error not in self._ignore_errors:
-            raise error
+        deserialize(seria: Union[Dict[str, Any], RootTree], seria_class: Type, 
+                    seria_fields_types: Optional[Dict[str, Union[Type, Field]]] = None) -> object:
+            Deserializes a JSON-compatible dictionary back into an object of the specified class.
         
-    def _handling_cycling_fields(self, obj: object) -> object:
-        if self._handle_cycles == "ignore": return
+        validate(seria: Dict[str, Any], schema_file_path: Union[str, Path]) -> None:
+            Validates the serialized data against a specified JSON schema.
 
-        if self.is_serializable(obj):
-            data = obj.__dict__
-        else:
-            self._handle_error(NotSerializableException)
+    Usage Examples:
+        Example of serialization:
+        ```python
+        from ooj import Serializer
 
-        for key, _ in data.items():
-            if isinstance(key, dict):
-                match self._handle_cycles:
-                    case "error":
-                        self._handle_error(CyclicFieldError)
-                    case "replace":
-                        obj.__dict__[key] = None
+        class ExampleClass:
+            def __init__(self, name: str, age: int):
+                self.name = name
+                self.age = age
 
-        return obj
-    
-    def _include_fields_to_obj(self, obj: object) -> object:
-        """
-        Include fields for an object and returns it.
+        example_object = ExampleClass(name="Alice", age=30)
+        serialized_data = Serializer.serialize(example_object)
+        print(serialized_data)
+        ```
 
-        Parameters:
-        - obj (object): Serializable object.
+        Example of deserialization:
+        ```python
+        from ooj import Serializer
 
-        Returns:
-        - object: Serialized object with included fields.
-        """
-        for field in self._include_fields:
-                for name, value in field.items():
-                    setattr(obj, name, value)
-
-        return obj
-    
-    def _exclude_fields_to_obj(self, obj: object) -> object:
-        """
-        Excludes fields for an object and returns it.
-
-        Parameters:
-        - obj (object): Serializable object.
-
-        Returns:
-        - object: Serialized object with excluded fields.
-        """
-        for field in self._exclude_fields:
-                for name, _ in field.items():
-                    delattr(obj, name)
-
-        return obj
-    
-    def _apply_transform_rules(self, obj: object) -> object:
-        if self.is_serializable(obj):
-
-            for key, value in obj.__dict__.items():
-                obj.__dict__[key] = self._transform_rules.get(key, value)
-
-                return obj
+        serialized_data = {"name": "Alice", "age": 30}
         
-        self._handle_error(NotSerializableException)
+        deserialized_object = Serializer.deserialize(serialized_data, ExampleClass)
+        print(deserialized_object.name)  # Output: Alice
+        print(deserialized_object.age)   # Output: 30
+        ```
+
+    """
+
+    @classmethod
+    def serialize(
+        cls,
+        object_: object,
+        schema_file_path: Optional[Union[str, Path]] = None
+    ) -> Dict[str, Any]:
+        """Serializes an object into a JSON-compatible dictionary format.
+
+        Args:
+            obj (object): The object to serialize.
+            schema_file_path (Optional[Union[str, Path]]): Optional path to the JSON schema file to validate against.
+
+        Returns:
+            Dict[str, Any]: A dictionary representing the serialized object.
+        """
+        
+        seria = {}
+        if schema_file_path is not None:
+            seria["$schema"] = schema_file_path
+        
+        object_items = object_.__dict__.items()
+        for field_name, field_value in object_items:
+            if cls.__is_array(field_value):
+                seria[field_name] = [cls.serialize(item) for item in field_value]
+            elif cls.__is_object(field_value):
+                seria[field_name] = cls.serialize(field_value)
+            else:
+                seria[field_name] = field_value
+
+        if schema_file_path is not None:
+            cls.validate(seria, schema_file_path)
+        
+        return seria
+
+    @classmethod
+    def deserialize(
+        cls,
+        seria: Union[Dict[str, Any], RootTree],
+        seria_type: Type,
+        seria_fields_types: Optional[Dict[str, Union[Type, Field]]] = None
+    ) -> object:
+        """Deserializes a JSON-compatible dictionary back into an object of the specified class.
+
+        Args:
+            seria (Union[Dict[str, Any], RootTree]): The serialized dictionary or RootTree to deserialize.
+            seria_class (Type): The class of the object to create.
+            seria_fields_types (Optional[Dict[str, Union[Type, Field]]]): Optional mapping of field names to types.
+
+        Returns:
+            object: An instance of the specified class with the deserialized data.
+        """
+        
+        seria.pop("$schema", None)
+
+        if seria_fields_types is not None:
+            seria_fields_types = Field.wrap_all_types(seria_fields_types)
+
+        parameters = {}
+        for key, value in seria.items():
+            if cls.__is_dict(value) or cls.__is_array(value):
+                field = seria_fields_types[key]
+
+            if cls.__is_dict(value):
+                parameters[key] = cls.deserialize(value, field.type, field.types)
+            elif cls.__is_array(value):
+                array_item_type = cls.__extract_type(field.type)
+                parameters[key] = [
+                    cls.deserialize(
+                        item,
+                        array_item_type,
+                        field.types
+                    ) for item in value]
+            else:
+                parameters[key] = value
+
+        return seria_type(**parameters)
+    
+    @classmethod
+    def validate(
+        cls,
+        seria: Dict[str, Any],
+        schema_file_path: Union[str, Path]
+    ) -> None:
+        """Validates the serialized data against a specified JSON schema.
+
+        Args:
+            seria (Dict[str, Any]): The serialized data to validate.
+            schema_file_path (Union[str, Path]): The path to the JSON schema file.
+        
+        Raises:
+            jsonschema.exceptions.ValidationError: If the serialized data does not conform to the schema.
+        """
+        with open(schema_file_path, 'r') as file:
+            schema = json.load(file)
+
+        Validator.check_schema(schema)
+        jsonschema.validate(seria, schema)
+
+    @classmethod
+    def __extract_type(cls, field_type: Type) -> Type:
+        """Extracts the type from a generic type.
+
+        Args:
+            field_type (Type): The type from which to extract the generic type.
+
+        Returns:
+            Type: The extracted type.
+
+        Raises:
+            TypeError: If the field type is not supported.
+        """
+        if hasattr(field_type, '__origin__'):
+            return get_args(field_type)[0]
+        raise TypeError(f"{field_type} not supported.")
+
+    @classmethod
+    def __is_array(cls, value: Any) -> bool:
+        """Checks if the given value is an array (list or tuple).
+
+        Args:
+            value (Any): The value to check.
+
+        Returns:
+            bool: True if the value is an array; otherwise, False.
+        """
+        return isinstance(value, (list, tuple))
+    
+    @classmethod
+    def __is_object(cls, value: Any) -> bool:
+        """Checks if the given value is an object.
+
+        Args:
+            value (Any): The value to check.
+
+        Returns:
+            bool: True if the value has a __dict__ attribute; otherwise, False.
+        """
+        return hasattr(value, "__dict__")
+    
+    @classmethod
+    def __is_dict(cls, value: Any) -> bool:
+        """Checks if the given value is a dictionary.
+
+        Args:
+            value (Any): The value to check.
+
+        Returns:
+            bool: True if the value is a dictionary; otherwise, False.
+        """
+        return isinstance(value, dict)
