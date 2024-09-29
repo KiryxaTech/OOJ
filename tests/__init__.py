@@ -1,2 +1,2 @@
 from .test_json_file import TestJsonFile
-from .test_json_serializer import TestJsonSerializer
+from .test_serializer import TestSerializer
