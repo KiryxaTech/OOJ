@@ -1,24 +1,24 @@
 # (c) KiryxaTech, 2024. Apache License 2.0
 
-from typing import Any, Dict, List, Union
 from abc import ABC, abstractmethod
+from typing import Any, Dict, List, Union
 
 
-class JsonObject(ABC):
+class JsonEntity(ABC):
     def __str__(self):
         return str(self.to_dict())
     
-    def __eq__(self, value: Union[Dict[str, Any], 'JsonObject']) -> bool:
+    def __eq__(self, value: Union[Dict[str, Any], 'JsonEntity']) -> bool:
         return str(self) == str(value)
         
-    def __ne__(self, value: Union[Dict[str, Any], 'JsonObject']) -> bool:
+    def __ne__(self, value: Union[Dict[str, Any], 'JsonEntity']) -> bool:
         return str(self) != str(value)
     
     @abstractmethod
     def to_dict(self) -> Dict: pass
 
 
-class Entry(JsonObject):
+class Entry(JsonEntity):
     """
     Представляет пару ключ-значение.
     """
@@ -36,7 +36,7 @@ class Entry(JsonObject):
         return {self.key: self.value}
 
 
-class BaseTree(JsonObject):
+class BaseTree(JsonEntity):
     def __init__(self, *entries: Union[Entry, 'BaseTree']) -> None:
         self.tree: List[Union[Entry, 'BaseTree']] = list(entries)
 

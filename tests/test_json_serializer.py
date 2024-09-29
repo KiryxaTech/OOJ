@@ -1,7 +1,7 @@
 import pytest
 import json
 from ooj.exceptions import NotSerializableException
-from ooj.json_serializer import JsonSerializer
+from ooj.serializer import JsonSerializer
 
 
 class SampleClass:
