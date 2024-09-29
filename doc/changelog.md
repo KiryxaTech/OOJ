@@ -1,42 +1,47 @@
+Here’s an improved version of the **Change Log** with a cleaner and more structured style:
+
+---
+
 # Change Log
 
-## Version levels
-`[Release].[Support].[BugFix]`
+## Versioning Format
+`[Release].[Minor].[Patch]`
 
 ## Versions
 
-### v0.0.5
-- Fixed a bug with creating a file.
+### v0.1.0 - Major Enhancements
+1. **Nested Type Support**: Introduced support for nested types in the `Serializer`.
+2. **Annotation-Based Type Substitution**: Added the ability to use annotations for type substitution during deserialization.
+3. **New Core Structures**: Integrated `Entry`, `RootTree`, and `Tree` objects, simplifying the handling of dictionaries and representing them as class objects.
+4. **Tree Conversion**: Added the `TreeConverter` class for converting between dictionaries and `RootTree` or `Tree` objects.
+5. **Improved I/O Efficiency**: Introduced a buffer in `JsonFile` to enhance performance when working with objects.
+6. **Deprecated Inefficient Methods**: Removed outdated retrieval methods from `JsonFile` due to inefficiency, with plans for reworking in future versions.
+7. **Module Renaming**: Streamlined module names to improve readability and code simplicity.
+8. **Schema Handling**: Added the `Schema` class to facilitate easy creation and management of JSON schemas.
+9. **Field Class**: Introduced the `Field` class for handling type substitution during deserialization.
 
-### v0.0.4
-- Improvement of current library classes.
-- Code cleaning.
-- Adding new methods to `JsonFile`.
-- Support for using `JsonFile` together with `JsonSerializer`.
+---
 
-### v0.0.3.6
-- Fixed to bug imports.
+### v0.0.5 - Bug Fixes
+- **File Creation Issue**: Fixed a bug related to creating files.
 
-### v0.0.3.1 - v0.0.3.5 (Yank: bug import)
-- Bug imports.
+---
 
-### v0.0.3 (Yank: bug import)
-- Implementation of serialization and deserialization of objects.
-- Writing tests.
-- Adding documentation.
+### v0.0.4 - Minor Improvements
+- **Class Refinements**: Improved the structure and functionality of library classes.
+- **Code Cleanup**: Refined code for better readability and maintainability.
+- **New Methods in `JsonFile`**: Added new methods to enhance functionality.
+- **`JsonSerializer` Integration**: Enabled seamless usage of `JsonFile` alongside `JsonSerializer`.
 
-### v0.0.2
-- Added the ability to combine JsonFile with a dictionary or JsonFile.
-- Added the ability to search for duplicates in two dictionaries or JsonFile.
-- Added the ability to select a range of keys by values.
-- Added tests covering new methods.
-- Bugs fixed
+---
 
-### v0.0.1.2
-Added the ability to nest when adding or deleting an object. A helper class called key has been created.
+### v0.0.1 - Initial Release
+- **`JsonFile` Class**: Created the `JsonFile` class and implemented basic functionality.
 
-### v0.0.1.1
-Version missing =(. Sorry...
+---
 
-### v0.0.1
-Created JsonFile class and added basic functionality.
+### General Tips for a Cleaner Change Log:
+- **Consistent Tense**: Keep the verb tense consistent. Using past tense helps clarify completed changes.
+- **Highlight Key Features**: Bold the key features or sections of updates for better visibility.
+- **Structured Titles**: Use clear version labels and descriptions, such as "Major Enhancements" or "Bug Fixes," to help users identify significant changes.
+- **Concise Wording**: Ensure that descriptions are brief but provide enough detail to understand the changes made.
