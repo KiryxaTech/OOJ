@@ -11,18 +11,54 @@ from .json_objects import RootTree
 
 
 class Field:
+    """
+    A class to represent a field in a data structure, encapsulating its type 
+    and any nested types for deserialization purposes.
+
+    Attributes:
+        type_ (Type): The type of the field.
+        types (Optional[Dict[str, Union[Type, Field]]]): A dictionary of nested 
+            field types, if any.
+    """
+
     def __init__(self, type_: Type, types: Optional[Dict[str, Union[Type, 'Field']]] = None):
+        """
+        Initializes a Field instance.
+
+        Args:
+            type_ (Type): The type of the field.
+            types (Optional[Dict[str, Union[Type, 'Field']]]): A dictionary of nested 
+                field types (default is None).
+        """
         self.type = type_
         self.types = types
 
     @classmethod
-    def wrap_type(cls, type: Union[Type, 'Field']) -> 'Field':
-        if isinstance(type, Field):
-            return type
-        return Field(type)
-    
+    def wrap_type(cls, type_: Union[Type, 'Field']) -> 'Field':
+        """
+        Wraps the given type in a Field instance if it is not already wrapped.
+
+        Args:
+            type_ (Union[Type, 'Field']): The type to be wrapped.
+
+        Returns:
+            Field: A Field instance wrapping the given type.
+        """
+        if isinstance(type_, Field):
+            return type_
+        return Field(type_)
+
     @classmethod
     def wrap_all_types(cls, types: Dict[str, Union[Type, 'Field']]) -> Dict[str, 'Field']:
+        """
+        Wraps all types in the provided dictionary in Field instances.
+
+        Args:
+            types (Dict[str, Union[Type, 'Field']]): A dictionary of types to be wrapped.
+
+        Returns:
+            Dict[str, Field]: A dictionary with types wrapped in Field instances.
+        """
         wrapped_types = {}
         for key, type_ in types.items():
             wrapped_types[key] = cls.wrap_type(type_)
@@ -31,6 +67,31 @@ class Field:
 
 
 class Schema:
+    """
+    A class representing a JSON Schema.
+
+    Attributes:
+        title (str): The title of the schema.
+        type_ (Optional[str]): The type of the schema. Defaults to "object".
+        properties (Optional[Dict[str, Any]]): The properties of the schema.
+        required (Optional[List[str]]): The required properties of the schema.
+        version (Optional[str]): The version of the schema. Defaults to "draft-07".
+        _schema (Dict[str, Any]): The internal representation of the JSON schema.
+
+    Methods:
+        to_dict() -> Dict[str, Any]:
+            Converts the schema to a dictionary format.
+        
+        load_from_file(file_path: Union[str, Path]) -> 'Schema':
+            Loads a schema from a JSON file and returns a Schema instance.
+        
+        dump_to_file(file_path: Union[str, Path]) -> None:
+            Dumps the schema to a JSON file.
+        
+        _get_version(schema_link: str) -> str:
+            Extracts the version from the schema link.
+    """
+
     def __init__(
         self,
         title: str,
@@ -39,6 +100,15 @@ class Schema:
         required: Optional[List[str]] = None,
         version: Optional[str] = "draft-07"
     ) -> None:
+        """Initializes a Schema instance with the provided attributes.
+
+        Args:
+            title (str): The title of the schema.
+            type_ (Optional[str]): The type of the schema. Defaults to "object".
+            properties (Optional[Dict[str, Any]]): The properties of the schema. Defaults to an empty dictionary.
+            required (Optional[List[str]]): The required properties of the schema. Defaults to an empty list.
+            version (Optional[str]): The version of the schema. Defaults to "draft-07".
+        """
         
         self._title = title
         self._type = type_
@@ -55,10 +125,23 @@ class Schema:
         }
 
     def to_dict(self) -> Dict[str, Any]:
+        """Converts the schema to a dictionary format.
+        
+        Returns:
+            Dict[str, Any]: The JSON schema as a dictionary.
+        """
         return self._schema
 
     @classmethod
     def load_from_file(cls, file_path: Union[str, Path]) -> 'Schema':
+        """Loads a schema from a JSON file and returns a Schema instance.
+
+        Args:
+            file_path (Union[str, Path]): The path to the JSON file containing the schema.
+
+        Returns:
+            Schema: A Schema instance representing the loaded schema.
+        """
         with open(file_path, 'r') as schema_file:
             schema_dict = json.load(schema_file)
         
@@ -75,28 +158,92 @@ class Schema:
         return schema
     
     def dump_to_file(self, file_path: Union[str, Path]) -> None:
+        """Dumps the schema to a JSON file.
+
+        Args:
+            file_path (Union[str, Path]): The path to the JSON file where the schema will be dumped.
+        """
         with open(file_path, 'w') as schema_file:
             json.dump(self._schema, schema_file, indent=4)
 
     def _get_version(self, schema_link: str) -> str:
+        """Extracts the version from the schema link.
+
+        Args:
+            schema_link (str): The schema link from which to extract the version.
+
+        Returns:
+            str: The extracted version of the schema.
+        """
         SCHEMA_VERSION_INDEX = -2
         schema_version = schema_link.split('/')[SCHEMA_VERSION_INDEX]
         return schema_version
 
 
 class Serializer:
+    """
+    A class for serializing and deserializing objects to and from JSON format.
+
+    Methods:
+        serialize(obj: object, schema_file_path: Optional[Union[str, Path]] = None) -> Dict[str, Any]:
+            Serializes an object into a JSON-compatible dictionary format.
+        
+        deserialize(seria: Union[Dict[str, Any], RootTree], seria_class: Type, 
+                    seria_fields_types: Optional[Dict[str, Union[Type, Field]]] = None) -> object:
+            Deserializes a JSON-compatible dictionary back into an object of the specified class.
+        
+        validate(seria: Dict[str, Any], schema_file_path: Union[str, Path]) -> None:
+            Validates the serialized data against a specified JSON schema.
+
+    Usage Examples:
+        Example of serialization:
+        ```python
+        from ooj import Serializer
+
+        class ExampleClass:
+            def __init__(self, name: str, age: int):
+                self.name = name
+                self.age = age
+
+        example_object = ExampleClass(name="Alice", age=30)
+        serialized_data = Serializer.serialize(example_object)
+        print(serialized_data)
+        ```
+
+        Example of deserialization:
+        ```python
+        from ooj import Serializer
+
+        serialized_data = {"name": "Alice", "age": 30}
+        
+        deserialized_object = Serializer.deserialize(serialized_data, ExampleClass)
+        print(deserialized_object.name)  # Output: Alice
+        print(deserialized_object.age)   # Output: 30
+        ```
+
+    """
+
     @classmethod
     def serialize(
         cls,
-        obj: object,
+        object_: object,
         schema_file_path: Optional[Union[str, Path]] = None
     ) -> Dict[str, Any]:
+        """Serializes an object into a JSON-compatible dictionary format.
+
+        Args:
+            obj (object): The object to serialize.
+            schema_file_path (Optional[Union[str, Path]]): Optional path to the JSON schema file to validate against.
+
+        Returns:
+            Dict[str, Any]: A dictionary representing the serialized object.
+        """
         
         seria = {}
         if schema_file_path is not None:
             seria["$schema"] = schema_file_path
         
-        object_items = obj.__dict__.items()
+        object_items = object_.__dict__.items()
         for field_name, field_value in object_items:
             if cls.__is_array(field_value):
                 seria[field_name] = [cls.serialize(item) for item in field_value]
@@ -114,9 +261,19 @@ class Serializer:
     def deserialize(
         cls,
         seria: Union[Dict[str, Any], RootTree],
-        seria_class: Type,
+        seria_type: Type,
         seria_fields_types: Optional[Dict[str, Union[Type, Field]]] = None
     ) -> object:
+        """Deserializes a JSON-compatible dictionary back into an object of the specified class.
+
+        Args:
+            seria (Union[Dict[str, Any], RootTree]): The serialized dictionary or RootTree to deserialize.
+            seria_class (Type): The class of the object to create.
+            seria_fields_types (Optional[Dict[str, Union[Type, Field]]]): Optional mapping of field names to types.
+
+        Returns:
+            object: An instance of the specified class with the deserialized data.
+        """
         
         seria.pop("$schema", None)
 
@@ -141,25 +298,7 @@ class Serializer:
             else:
                 parameters[key] = value
 
-        return seria_class(**parameters)
-    
-    @classmethod
-    def __extract_type(cls, field_type: Type) -> Type:
-        if hasattr(field_type, '__origin__'):
-            return get_args(field_type)[0]
-        raise TypeError(f"{field_type} not supported.")
-
-    @classmethod
-    def __is_array(cls, value: Any) -> bool:
-        return isinstance(value, (list, tuple))
-    
-    @classmethod
-    def __is_object(cls, value: Any) -> bool:
-        return hasattr(value, "__dict__")
-    
-    @classmethod
-    def __is_dict(cls, value: Any) -> bool:
-        return isinstance(value, dict)
+        return seria_type(**parameters)
     
     @classmethod
     def validate(
@@ -167,9 +306,70 @@ class Serializer:
         seria: Dict[str, Any],
         schema_file_path: Union[str, Path]
     ) -> None:
+        """Validates the serialized data against a specified JSON schema.
+
+        Args:
+            seria (Dict[str, Any]): The serialized data to validate.
+            schema_file_path (Union[str, Path]): The path to the JSON schema file.
         
+        Raises:
+            jsonschema.exceptions.ValidationError: If the serialized data does not conform to the schema.
+        """
         with open(schema_file_path, 'r') as file:
             schema = json.load(file)
 
         Validator.check_schema(schema)
         jsonschema.validate(seria, schema)
+
+    @classmethod
+    def __extract_type(cls, field_type: Type) -> Type:
+        """Extracts the type from a generic type.
+
+        Args:
+            field_type (Type): The type from which to extract the generic type.
+
+        Returns:
+            Type: The extracted type.
+
+        Raises:
+            TypeError: If the field type is not supported.
+        """
+        if hasattr(field_type, '__origin__'):
+            return get_args(field_type)[0]
+        raise TypeError(f"{field_type} not supported.")
+
+    @classmethod
+    def __is_array(cls, value: Any) -> bool:
+        """Checks if the given value is an array (list or tuple).
+
+        Args:
+            value (Any): The value to check.
+
+        Returns:
+            bool: True if the value is an array; otherwise, False.
+        """
+        return isinstance(value, (list, tuple))
+    
+    @classmethod
+    def __is_object(cls, value: Any) -> bool:
+        """Checks if the given value is an object.
+
+        Args:
+            value (Any): The value to check.
+
+        Returns:
+            bool: True if the value has a __dict__ attribute; otherwise, False.
+        """
+        return hasattr(value, "__dict__")
+    
+    @classmethod
+    def __is_dict(cls, value: Any) -> bool:
+        """Checks if the given value is a dictionary.
+
+        Args:
+            value (Any): The value to check.
+
+        Returns:
+            bool: True if the value is a dictionary; otherwise, False.
+        """
+        return isinstance(value, dict)
