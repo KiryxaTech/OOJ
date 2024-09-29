@@ -9,9 +9,9 @@
 ![Downloads last 6 month](https://static.pepy.tech/personalized-badge/ooj?period=total&units=international_system&left_color=grey&right_color=green&left_text=downloads%20last%206%20month)
 ![PyPI - License](https://img.shields.io/badge/license-Apache2.0-blue)
 </div>
-# Object-Oriented JSON (OOJ)
 
-Object-Oriented JSON (OOJ) is a universal library for working with JSON in Python, providing simplicity and convenience in serializing and deserializing complex objects.
+
+`Object-Oriented JSON (OOJ)` is a universal library for working with JSON in Python, providing simplicity and convenience in serializing and deserializing complex objects.
 
 ## Table of Contents
 
