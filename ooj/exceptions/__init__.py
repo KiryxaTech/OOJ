@@ -1,5 +1,5 @@
 from .exceptions import (
-    NotSerializableException,
-    CyclicFieldError,
+    SchemaException,
+    ValidationException,
     FileExtensionException
 )

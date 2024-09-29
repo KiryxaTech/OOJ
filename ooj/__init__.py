@@ -4,9 +4,9 @@ from .base import JsonBase
 from .entities import (BaseTree, Entry, 
                        JsonEntity, RootTree, 
                        Tree, TreeConverter)
-from .exceptions import (CyclicFieldError, 
-                         FileExtensionException, 
-                         NotSerializableException)
+from .exceptions.exceptions import (SchemaException,
+                                    ValidationException,
+                                    FileExtensionException)
 from .file import JsonFile
 from .serializer import (Field, Schema, Serializer)
 from .url import JsonURL

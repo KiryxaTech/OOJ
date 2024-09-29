@@ -5,10 +5,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Type, Optional, Union, get_args
 
 import jsonschema
+import jsonschema.exceptions
 from jsonschema.protocols import Validator
 
 from .entities import RootTree
-
+from .exceptions.exceptions import SchemaException, ValidationException
 
 class Field:
     """
@@ -30,6 +31,13 @@ class Field:
             types (Optional[Dict[str, Union[Type, 'Field']]]): A dictionary of nested 
                 field types (default is None).
         """
+
+        if not isinstance(type_, type):
+            raise TypeError(f"'{type_.__class__.__qualname__}' should be a type, not an instance.")
+        
+        if not isinstance(types, dict) and not types is None:
+            raise TypeError(f"The {types} is not a dictionary.")
+
         self.type = type_
         self.types = types
 
@@ -318,8 +326,13 @@ class Serializer:
         with open(schema_file_path, 'r') as file:
             schema = json.load(file)
 
-        Validator.check_schema(schema)
-        jsonschema.validate(seria, schema)
+        try:
+            Validator.check_schema(schema)
+            jsonschema.validate(seria, schema)
+        except jsonschema.exceptions.SchemaError as e:
+            raise SchemaException(e)
+        except jsonschema.exceptions.ValidationError as e:
+            raise ValidationException(e)
 
     @classmethod
     def __extract_type(cls, field_type: Type) -> Type:
