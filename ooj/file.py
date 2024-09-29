@@ -112,7 +112,6 @@ class JsonFile(JsonBase, Readable, Writable):
         json_data = self.read()
         return TreeConverter.to_root_tree(json_data)
 
-
     def _normalize_keys(self, keys_path: Union[List[str], str]) -> List[str]:
         """ Checks whether the keys are valid. """
         return [keys_path] if isinstance(keys_path, str) else keys_path
