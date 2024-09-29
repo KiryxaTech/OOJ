@@ -1,4 +1,7 @@
+# (c) KiryxaTech, 2024. Apache License 2.0
+
 from typing import Dict, Type, Optional, Union
+
 
 class Field:
     """
