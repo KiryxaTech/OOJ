@@ -40,6 +40,8 @@ class JsonFile(JsonBase, Readable, Writable):
         
         # Buffer for faster access to the dictionary.
         self.__buffer = {}
+        if self.exists:
+            self.update_buffer_from_file()
 
     @property
     def fp(self):

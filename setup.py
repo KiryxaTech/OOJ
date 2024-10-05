@@ -4,7 +4,7 @@ from io import open
 from setuptools import setup
 
 
-version = "0.1.0"
+version = "0.1.1"
 
 
 with open('README.md', encoding='utf-8') as f:
@@ -18,19 +18,26 @@ setup(
     author='KiryxaTech',
     author_email='kiryxatech@gmail.com',
 
-    description=(u'Object-Oriented JSON (OOJ) is a universal library'
-                 u'for working with JSON in Python, providing simplicity'
-                 u'and convenience in serializing and deserializing'
-                 u'complex objects.'),
+    description=(
+        u'Object-Oriented JSON (OOJ) is a universal library'
+        u'for working with JSON in Python, providing simplicity'
+        u'and convenience in serializing and deserializing'
+        u'complex objects.'
+    ),
     long_description=long_discription,
     long_description_content_type='text/markdown',
 
     url='https://github.com/KiryxaTechDev/ooj',
     download_url=f'https://github.com/KiryxaTechDev/ooj/archive/refs/tags/{version}.zip',
 
-    packages=['ooj',
-              'ooj.exceptions'],
-
+    packages=[
+        'ooj',
+        'ooj.exceptions'
+    ],
+    install_requires=[
+        'jsonschema>=4.0.0',
+        'requests==2.32.3'
+    ],
     classifiers=[
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python',
