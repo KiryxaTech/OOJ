@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Union
 from pathlib import Path
 
 from .base import JsonBase, Readable, Writable
-from .entities import RootTree, Entry, TreeConverter
+from .core_classes import RootTree, Entry, TreeConverter
 from .exceptions import FileExtensionException
 
 

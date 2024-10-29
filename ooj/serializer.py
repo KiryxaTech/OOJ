@@ -8,7 +8,7 @@ import jsonschema
 import jsonschema.exceptions
 from jsonschema.protocols import Validator
 
-from .entities import RootTree
+from .core_classes import RootTree
 from .exceptions.exceptions import SchemaException, ValidationException
 from .field import Field
 

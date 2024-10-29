@@ -32,7 +32,8 @@ setup(
 
     packages=[
         'ooj',
-        'ooj.exceptions'
+        'ooj.exceptions',
+        'ooj.core_classes'
     ],
     install_requires=[
         'jsonschema>=4.0.0',

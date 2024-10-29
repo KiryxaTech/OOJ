@@ -1,10 +1,9 @@
 # (c) KiryxaTech, 2024. Apache License 2.0. See the LICENSE file.
 
 from .base import JsonBase
-from .entities import (
-    BaseTree,
+from .core_classes import (
+    Entity,
     Entry,
-    JsonEntity,
     RootTree,
     Tree,
     TreeConverter
@@ -23,6 +22,7 @@ from .url import JsonURL
 __all__ = [
     "BaseTree",
     "CyclicFieldError",
+    "Entity",
     "Entry",
     "Field",
     "FileExtensionException",
