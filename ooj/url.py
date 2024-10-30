@@ -1,4 +1,4 @@
-# (c) KiryxaTech, 2024. Apache License 2.0
+# (c) KiryxaTech, 2024. Apache License 2.0. See the LICENSE file.
 
 import re
 import requests
@@ -6,7 +6,7 @@ import json
 from typing import Union, Optional, List, Dict
 from pathlib import Path
 
-from . import JsonBase, JsonFile
+from ooj import JsonBase, JsonFile
 
 
 class JsonURL(JsonBase):
