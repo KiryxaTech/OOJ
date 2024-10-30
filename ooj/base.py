@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Union
 
-from ooj.core_classes import Tree, TreeConverter
+from ooj.core_classes import Tree
 
 
 class Readable(ABC):
@@ -58,7 +58,7 @@ class JsonBase(ABC):
         return self.__buffer.to_dict()
     
     def get_buffer_dict(self) -> dict:
-        return TreeConverter.to_dict(self.__buffer)
+        return self.__buffer.to_dict()
 
     def get_buffer_tree(self) -> Tree:
         return self.__buffer
@@ -67,7 +67,7 @@ class JsonBase(ABC):
         if isinstance(buffer_data, Tree):
             self.__buffer = buffer_data
         elif isinstance(buffer_data, dict):
-            self.__buffer = TreeConverter.to_root_tree(buffer_data)
+            self.__buffer = Tree.to_tree(buffer_data)
 
     def _handle_exception(self, exception: Exception) -> None:
         """

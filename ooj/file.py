@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Union
 from pathlib import Path
 
 from ooj.base import JsonBase, Readable, Writable
-from ooj.core_classes import Entry, Tree, TreeConverter
+from ooj.core_classes import Entry, Tree
 from ooj.exceptions import FileExtensionException
 
 
@@ -167,7 +167,7 @@ class JsonFile(JsonBase, Readable, Writable):
             Tree: An instance representing the file's JSON data as a tree structure.
         """
         json_data = self.read()
-        return TreeConverter.to_tree(json_data)
+        return Tree.to_tree(json_data)
 
     def _normalize_keys(self, keys_path: Union[List[str], str]) -> List[str]:
         """ Ensures keys are in a list format for consistent access. """

@@ -27,11 +27,6 @@ print(data) # Output: {"name": "Alice", "age": 30, "passport": {"seria": "64 92"
 
 from .entity import Entity
 from .entry import Entry
-from .tree import Tree, TreeConverter
+from .tree import Tree
 
-__all__ = [
-    "Entity",
-    "Entry",
-    "Tree",
-    "TreeConverter"
-]
+__all__ = ["Entity", "Entry", "Tree"]

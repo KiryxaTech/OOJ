@@ -83,38 +83,21 @@ class Tree(Entity):
                 raise TypeError("The element must be an instance of Entry.")
         
         return dictionary
-
-
-class TreeConverter:
-    """
-    Utility class for converting between JSON data and OOJ tree structures.
-
-    The `TreeConverter` class provides methods for converting JSON-like dictionaries 
-    into `Tree` or `Tree` objects and vice versa. This allows for seamless 
-    transitions between JSON and OOJ structures.
-
-    Methods:
-        to_root_tree(json_data: dict) -> Tree:
-            Converts a dictionary to a `Tree` object.
-
-        to_tree(key: str, json_data: dict) -> Tree:
-            Converts a dictionary with a specified key to a `Tree` object.
-
-        to_dict(json_object: Union[Entry, Tree, Tree]) -> Dict:
-            Converts an OOJ object (Entry, Tree, or Tree) back into a dictionary.
-    """
-
+    
     @classmethod
-    def to_tree(cls, data: dict) -> Tree:
+    def to_tree(cls, data: dict) -> 'Tree':
         """
         Converts a dictionary into a `Tree` object, creating a hierarchical structure.
 
         Args:
-            data (dict): The dictionary to convert into a `Tree`.
+            data (dict): The dictionary to convert into a `Tree`. Keys represent 
+                        the entries, and values can be either primitive types 
+                        or nested dictionaries representing subtrees.
 
         Returns:
-            Tree: A `Tree` instance representing the dictionary structure, where nested
-                dictionaries are recursively converted into subtree objects.
+            Tree: A `Tree` instance representing the dictionary structure, where 
+                each key corresponds to an `Entry`, and nested dictionaries are 
+                recursively converted into subtree objects.
         """
         tree = Tree()
         
@@ -126,18 +109,5 @@ class TreeConverter:
             else:
                 # If the value is a primitive, create an Entry with this value
                 tree.add(Entry(entry_key, entry_value))
-        
+
         return tree
-    
-    @classmethod
-    def to_dict(cls, json_object: Union[Entry, Tree, Tree]) -> Dict:
-        """
-        Converts an OOJ object (Entry, Tree, or Tree) back into a dictionary.
-
-        Args:
-            json_object (Union[Entry, Tree, Tree]): The OOJ object to convert.
-
-        Returns:
-            Dict: A dictionary representation of the OOJ object.
-        """
-        return dict(json_object)
