@@ -1,4 +1,4 @@
-# (c) KiryxaTech 2024. Apache License 2.0
+# (c) KiryxaTech, 2024. Apache License 2.0. See the LICENSE file.
 
 
 class FileExtensionException(Exception):

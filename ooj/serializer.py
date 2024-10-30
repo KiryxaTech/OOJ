@@ -1,4 +1,4 @@
-# (c) KiryxaTech, 2024. Apache License 2.0
+# (c) KiryxaTech, 2024. Apache License 2.0. See the LICENSE file.
 
 import json
 from pathlib import Path
@@ -8,9 +8,9 @@ import jsonschema
 import jsonschema.exceptions
 from jsonschema.protocols import Validator
 
-from .entities import RootTree
-from .exceptions.exceptions import SchemaException, ValidationException
-from .field import Field
+from ooj import Field
+from ooj.core_classes import RootTree
+from ooj.exceptions import SchemaException, ValidationException
 
 
 class Serializer:

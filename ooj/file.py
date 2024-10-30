@@ -1,28 +1,75 @@
-# (c) KiryxaTech, 2024. Apache License 2.0
+# (c) KiryxaTech, 2024. Apache License 2.0. See the LICENSE file.
 
 import json
 from typing import Any, Dict, List, Union
 from pathlib import Path
 
-from .base import JsonBase, Readable, Writable
-from .entities import RootTree, Entry, TreeConverter
-from .exceptions import FileExtensionException
+from ooj.base import JsonBase, Readable, Writable
+from ooj.core_classes import RootTree, Entry, TreeConverter
+from ooj.exceptions import FileExtensionException
 
 
 class JsonFile(JsonBase, Readable, Writable):
+    """
+    JsonFile manages JSON file operations, supporting structured access, manipulation, 
+    and conversion of data into `RootTree` and `Entry` objects for complex JSON handling.
+
+    Attributes:
+        _fp (Path): The file path for storing JSON data.
+        _encoding (str): Encoding for reading and writing files (default "utf-8").
+        _indent (int): Indentation level for JSON formatting.
+        ignore_errors (List[Exception]): List of exceptions to ignore during read/write.
+
+    Methods:
+        create():
+            Ensures the file is created with initial empty JSON data.
+
+        create_if_not_exists():
+            Creates the file only if it does not already exist.
+
+        delete():
+            Deletes the file from the system.
+
+        clear():
+            Clears all data in the file by writing an empty JSON object.
+
+        write(data: Union[Dict, RootTree]):
+            Writes JSON data or a `RootTree` object to the file.
+
+        read() -> Dict:
+            Reads and returns JSON data from the file as a dictionary.
+
+        read_tree() -> RootTree:
+            Reads data from the file and converts it into a `RootTree` structure.
+
+        set_entry(key_s: Union[List[str], str], value: Union[Any, Entry, RootTree]):
+            Sets a value at a specified key path, creating intermediate keys as needed.
+
+        get_entry(key_s: Union[List[str], str]) -> Any:
+            Retrieves a value at the specified key path.
+
+        del_entry(key_s: Union[List[str], str]):
+            Deletes an entry at the specified key path.
+
+        update_buffer_from_file():
+            Refreshes the internal buffer with the current data from the file.
+    """
+
     def __init__(self,
                  fp: Union[str, Path],
                  encoding: str = "utf-8",
                  indent: int = 4,
                  ignore_errors: List[Exception] = None):
         """
-        Arguments:
-        - fp (Union[str, Path]): Path to save data (if None, data is not saved)
-        - encoding (str): Encoding for reading/writing files
-        - indent (int): Indentation for JSON formatting
-        - ignore_errors (List[Exceptions]): List of exceptions to ignore during read/write operations
+        Initializes the JsonFile instance with the specified file path, encoding, 
+        and error-handling options.
+
+        Args:
+            fp (Union[str, Path]): File path for storing JSON data.
+            encoding (str): Encoding for file operations (default "utf-8").
+            indent (int): JSON indentation level (default 4).
+            ignore_errors (List[Exception], optional): List of exceptions to ignore.
         """
-        
         self._fp = Path(fp)
         self._encoding = encoding
         self._indent = indent
@@ -32,48 +79,45 @@ class JsonFile(JsonBase, Readable, Writable):
         Readable.__init__(self, self._fp)
         Writable.__init__(self, self._fp)
 
-        # Checking the file path for the validity of the extension.
         if not str(self._fp).endswith(".json"):
             self._handle_exception(
-                FileExtensionException(f"The file {self.save_path} not JSON file.")
+                FileExtensionException(f"The file {self.save_path} is not a JSON file.")
             )
         
-        # Buffer for faster access to the dictionary.
         self.__buffer = {}
         if self.exists:
             self.update_buffer_from_file()
 
     @property
     def fp(self):
-        """ Returns the path to the file. """
+        """ Returns the path to the JSON file. """
         return self._fp
 
     @property
     def exists(self) -> bool:
-        """ Returns True if the file is found, otherwise False. """
+        """ Returns True if the file exists; otherwise, False. """
         try:
             return self._fp.exists()
         except OSError as e:
             self._handle_exception(e)
 
     def create(self):
-        """ Creates a file anyway. """
+        """ Ensures the file is created and initialized with empty JSON data. """
         if self._fp:
             try:
                 self._fp.parent.mkdir(parents=True, exist_ok=True)
             except OSError as e:
                 self._handle_exception(e)
-
             self._fp.touch()
             self.write({})
 
     def create_if_not_exists(self):
-        """ Creates a file if it does not exist. """
+        """ Creates the file only if it does not already exist. """
         if not self.exists:
             self.create()
 
     def delete(self):
-        """ Deletes the file anyway. """
+        """ Deletes the JSON file. """
         if self._fp:
             try:
                 self._fp.unlink(missing_ok=True)
@@ -81,11 +125,16 @@ class JsonFile(JsonBase, Readable, Writable):
                 self._handle_exception(e)
 
     def clear(self):
-        """ Cleaning the file. """
+        """ Clears all data in the file by writing an empty JSON object. """
         self.write({})
 
     def write(self, data: Union[Dict, RootTree]):
-        """ Writes a dictionary to a file. """
+        """
+        Writes data to the file. Accepts either a dictionary or `RootTree` instance.
+
+        Args:
+            data (Union[Dict, RootTree]): JSON-compatible dictionary or `RootTree` object.
+        """
         if self._fp:
             try:
                 with self._fp.open('w', encoding=self._encoding) as f:
@@ -100,7 +149,7 @@ class JsonFile(JsonBase, Readable, Writable):
                 self._handle_exception(e)
 
     def read(self) -> Dict:
-        """ Reads data from a file and returns a dictionary. """
+        """ Reads and returns JSON data from the file as a dictionary. """
         if not self.exists:
             return {}
         try:
@@ -111,17 +160,29 @@ class JsonFile(JsonBase, Readable, Writable):
             return {}
         
     def read_tree(self) -> RootTree:
+        """
+        Reads data from the file and converts it to a `RootTree` structure.
+
+        Returns:
+            RootTree: An instance representing the file's JSON data as a tree structure.
+        """
         json_data = self.read()
         return TreeConverter.to_root_tree(json_data)
 
     def _normalize_keys(self, keys_path: Union[List[str], str]) -> List[str]:
-        """ Checks whether the keys are valid. """
+        """ Ensures keys are in a list format for consistent access. """
         return [keys_path] if isinstance(keys_path, str) else keys_path
 
     def _navigate_to_key(self, keys_path: List[str], create_if_missing: bool = False) -> dict:
         """
-        Finds the path to the key and creates it
-        if the create_if_missing argument = False.
+        Navigates to the specified key path, optionally creating intermediate paths.
+
+        Args:
+            keys_path (List[str]): List of keys representing the path.
+            create_if_missing (bool): Whether to create missing intermediate keys.
+
+        Returns:
+            dict: The dictionary at the last key in the path.
         """
         data = self.__buffer
         for key in keys_path[:-1]:
@@ -135,13 +196,11 @@ class JsonFile(JsonBase, Readable, Writable):
 
     def set_entry(self, key_s: Union[List[str], str], value: Union[Any, Entry, RootTree]) -> None:
         """
-        Updates the value at the specified key path. If any intermediate keys 
-        are missing, they will be created as empty dictionaries.
-        
-        Arguments:
-        - key_s (Union[List[str], str]): A single key or a list of keys representing 
-        the path to the value in the dictionary.
-        - value (Union[Any, Entry, Tree]): The value or Entry/Tree object to set at the specified key path.
+        Sets a value at a specified key path, creating intermediate keys if needed.
+
+        Args:
+            key_s (Union[List[str], str]): Path to the key as a list or string.
+            value (Union[Any, Entry, RootTree]): Value or object to assign at the path.
         """
         key_s = self._normalize_keys(key_s)
         
@@ -153,6 +212,15 @@ class JsonFile(JsonBase, Readable, Writable):
         self.write(self.__buffer)
 
     def get_entry(self, key_s: Union[List[str], str]) -> Any:
+        """
+        Retrieves the value at the specified key path.
+
+        Args:
+            key_s (Union[List[str], str]): Path to the key as a list or string.
+
+        Returns:
+            Any: The value at the specified key.
+        """
         key_s = self._normalize_keys(key_s)
         data = self._navigate_to_key(key_s)
         if key_s[-1] in data:
@@ -160,6 +228,12 @@ class JsonFile(JsonBase, Readable, Writable):
         self._handle_exception(KeyError(f"Key '{key_s[-1]}' not found."))
 
     def del_entry(self, key_s: Union[List[str], str]) -> None:
+        """
+        Deletes the entry at the specified key path.
+
+        Args:
+            key_s (Union[List[str], str]): Path to the key as a list or string.
+        """
         key_s = self._normalize_keys(key_s)
         data = self._navigate_to_key(key_s)
         if key_s[-1] in data:
@@ -169,29 +243,24 @@ class JsonFile(JsonBase, Readable, Writable):
         self.write(data)
 
     def update_buffer_from_file(self):
-        """
-        Updates the internal buffer by reading the current data from the file.
-        This is useful if the file has been changed externally and the buffer 
-        needs to be synced with the file.
-        """
+        """ Syncs the internal buffer with the current data in the file. """
         self.__buffer = self.read()
 
     def _handle_exception(self, e: Exception):
         """
-        Handles exceptions during file operations. If the exception is one of
-        those specified in `ignore_errors`, the exception will be raised.
-        
-        Arguments:
-        - e (Exception): The exception to be handled.
+        Manages exceptions, raising only if not in ignore_errors.
+
+        Args:
+            e (Exception): The exception to handle.
         """
         if not any(isinstance(e, ignore_error) for ignore_error in self.ignore_errors):
             raise e
 
     def __update_buffer_from_dict(self, dictionary: Dict):
         """
-        Updates the internal buffer with the given dictionary.
-        
-        Arguments:
-        - dictionary (Dict): The dictionary to update the buffer with.
+        Updates the buffer with a new dictionary.
+
+        Args:
+            dictionary (Dict): Dictionary to update the buffer.
         """
-        self.__buffer = dictionary
+        self.__buffer.update(dictionary)

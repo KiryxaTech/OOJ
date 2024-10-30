@@ -1,9 +1,9 @@
-# (c) KiryxaTech 2024. Apache License 2.0
+# (c) KiryxaTech, 2024. Apache License 2.0. See the LICENSE file.
 
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Union
 
-from .entities import RootTree, TreeConverter
+from ooj.core_classes import RootTree, TreeConverter
 
 
 class Readable(ABC):
@@ -18,6 +18,7 @@ class Writable(ABC):
     def __init__(self, fp: str) -> None:
         self._fp = fp
 
+    @abstractmethod
     def write(self, data: Union[Dict[str, Any], RootTree]): pass
 
 

@@ -4,10 +4,10 @@
         <img src="./docs/project-logo/OOJ.png">
     </picture>
 
-![PyPI](https://img.shields.io/pypi/v/ooj)
-![PyPI - Downloads](https://img.shields.io/pypi/dm/ooj?color=green&label=downloads)
-![Downloads last 6 month](https://static.pepy.tech/personalized-badge/ooj?period=total&units=international_system&left_color=grey&right_color=green&left_text=downloads%20last%206%20month)
-![PyPI - License](https://img.shields.io/badge/license-Apache2.0-blue)
+![PyPI Version](https://img.shields.io/pypi/v/ooj)
+![Month Downloads](https://static.pepy.tech/badge/ooj/month)
+![Total Downloads](https://static.pepy.tech/badge/ooj)
+![Project License](https://img.shields.io/badge/license-Apache2.0-e6b064)
 </div>
 
 
@@ -31,17 +31,9 @@ pip install ooj
 
 ## Core Classes
 
-### `JsonEntity`
-
-An abstract class representing the base for all JSON objects. It provides methods for converting objects to a dictionary and checking their equality.
-
 ### `Entry`
 
 A class representing a key-value pair in JSON. It implements methods for serialization to a dictionary and comparison.
-
-### `BaseTree`
-
-A class representing a tree of JSON objects. It supports adding and removing elements and serializing to a dictionary.
 
 ### `RootTree` and `Tree`
 
@@ -69,43 +61,18 @@ root_tree = TreeConverter.to_root_tree(json_data)
 print(root_tree)
 ```
 
-## Support for Nested Types
-
-The OOJ library supports deserializing complex nested types, allowing you to easily handle structures with arbitrary nesting. When serializing and deserializing, you can use annotations to specify data types, simplifying the work with custom objects and arrays.
-
-Example:
-
+## Write and Read
 ```python
-from ooj import Serializer
+from ooj import JsonFile
 
-class Address(JsonEntity):
-    def __init__(self, street: str, city: str):
-        self.street = street
-        self.city = city
+file = JsonFile("test.json")
 
-    def to_dict(self):
-        return {
-            "street": self.street,
-            "city": self.city
-        }
+# Write to file.
+file.write({"name": "Alice"})
 
-class Person(JsonEntity):
-    def __init__(self, name: str, age: int, address: Address):
-        self.name = name
-        self.age = age
-        self.address = address
-
-    def to_dict(self):
-        return {
-            "name": self.name,
-            "age": self.age,
-            "address": self.address.to_dict()
-        }
-
-address = Address("123 Main St", "Anytown")
-person = Person("Alice", 30, address)
-json_dict = person.to_dict()
-print(json_dict)
+# Read from file.
+data = file.read()
+print(data) # Output: {"name": "Alice"}
 ```
 
 ## License
