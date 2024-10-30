@@ -9,7 +9,7 @@ import jsonschema.exceptions
 from jsonschema.protocols import Validator
 
 from ooj import Field
-from ooj.core_classes import RootTree
+from ooj.core_classes import Tree
 from ooj.exceptions import SchemaException, ValidationException
 
 
@@ -21,7 +21,7 @@ class Serializer:
         serialize(obj: object, schema_file_path: Optional[Union[str, Path]] = None) -> Dict[str, Any]:
             Serializes an object into a JSON-compatible dictionary format.
         
-        deserialize(seria: Union[Dict[str, Any], RootTree], seria_class: Type, 
+        deserialize(seria: Union[Dict[str, Any], Tree], seria_class: Type, 
                     seria_fields_types: Optional[Dict[str, Union[Type, Field]]] = None) -> object:
             Deserializes a JSON-compatible dictionary back into an object of the specified class.
         
@@ -92,21 +92,21 @@ class Serializer:
     @classmethod
     def deserialize(
         cls,
-        seria: Union[Dict[str, Any], RootTree],
+        seria: Union[Dict[str, Any], Tree],
         seria_type: Type,
         seria_fields_types: Optional[Dict[str, Union[Type, Field]]] = None
     ) -> object:
         """Deserializes a JSON-compatible dictionary back into an object of the specified class.
 
         Args:
-            seria (Union[Dict[str, Any], RootTree]): The serialized dictionary or RootTree to deserialize.
+            seria (Union[Dict[str, Any], Tree]): The serialized dictionary or Tree to deserialize.
             seria_type (Type): The class of the object to create.
             seria_fields_types (Optional[Dict[str, Union[Type, Field]]]): Optional mapping of field names to types.
 
         Returns:
             object: An instance of the specified class with the deserialized data.
         """
-        if isinstance(seria, RootTree):
+        if isinstance(seria, Tree):
             seria = seria.to_dict()
         
         seria.pop("$schema", None)

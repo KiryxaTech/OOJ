@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Union
 
-from ooj.core_classes import RootTree, TreeConverter
+from ooj.core_classes import Tree, TreeConverter
 
 
 class Readable(ABC):
@@ -19,7 +19,7 @@ class Writable(ABC):
         self._fp = fp
 
     @abstractmethod
-    def write(self, data: Union[Dict[str, Any], RootTree]): pass
+    def write(self, data: Union[Dict[str, Any], Tree]): pass
 
 
 class JsonBase(ABC):
@@ -30,14 +30,14 @@ class JsonBase(ABC):
         data (Dict[str, Any]): The JSON data.
     """
 
-    def __init__(self, data: Union[Dict[str, Any], RootTree]):
+    def __init__(self, data: Union[Dict[str, Any], Tree]):
         """
         Initializes the JsonBaseClass instance.
 
         Args:
             data (Dict[str, Any]): The JSON data. Defaults to an empty dictionary.
         """
-        self.__buffer: RootTree = None
+        self.__buffer: Tree = None
 
     def __str__(self) -> str:
         """
@@ -60,11 +60,11 @@ class JsonBase(ABC):
     def get_buffer_dict(self) -> dict:
         return TreeConverter.to_dict(self.__buffer)
 
-    def get_buffer_tree(self) -> RootTree:
+    def get_buffer_tree(self) -> Tree:
         return self.__buffer
     
-    def _update_buffer(self, buffer_data: Union[Dict[str, Any], RootTree]):
-        if isinstance(buffer_data, RootTree):
+    def _update_buffer(self, buffer_data: Union[Dict[str, Any], Tree]):
+        if isinstance(buffer_data, Tree):
             self.__buffer = buffer_data
         elif isinstance(buffer_data, dict):
             self.__buffer = TreeConverter.to_root_tree(buffer_data)

@@ -5,14 +5,14 @@ from typing import Any, Dict, List, Union
 from pathlib import Path
 
 from ooj.base import JsonBase, Readable, Writable
-from ooj.core_classes import RootTree, Entry, TreeConverter
+from ooj.core_classes import Entry, Tree, TreeConverter
 from ooj.exceptions import FileExtensionException
 
 
 class JsonFile(JsonBase, Readable, Writable):
     """
     JsonFile manages JSON file operations, supporting structured access, manipulation, 
-    and conversion of data into `RootTree` and `Entry` objects for complex JSON handling.
+    and conversion of data into `Tree` and `Entry` objects for complex JSON handling.
 
     Attributes:
         _fp (Path): The file path for storing JSON data.
@@ -33,16 +33,16 @@ class JsonFile(JsonBase, Readable, Writable):
         clear():
             Clears all data in the file by writing an empty JSON object.
 
-        write(data: Union[Dict, RootTree]):
-            Writes JSON data or a `RootTree` object to the file.
+        write(data: Union[Dict, Tree]):
+            Writes JSON data or a `Tree` object to the file.
 
         read() -> Dict:
             Reads and returns JSON data from the file as a dictionary.
 
-        read_tree() -> RootTree:
-            Reads data from the file and converts it into a `RootTree` structure.
+        read_tree() -> Tree:
+            Reads data from the file and converts it into a `Tree` structure.
 
-        set_entry(key_s: Union[List[str], str], value: Union[Any, Entry, RootTree]):
+        set_entry(key_s: Union[List[str], str], value: Union[Any, Entry, Tree]):
             Sets a value at a specified key path, creating intermediate keys as needed.
 
         get_entry(key_s: Union[List[str], str]) -> Any:
@@ -128,17 +128,17 @@ class JsonFile(JsonBase, Readable, Writable):
         """ Clears all data in the file by writing an empty JSON object. """
         self.write({})
 
-    def write(self, data: Union[Dict, RootTree]):
+    def write(self, data: Union[Dict, Tree]):
         """
-        Writes data to the file. Accepts either a dictionary or `RootTree` instance.
+        Writes data to the file. Accepts either a dictionary or `Tree` instance.
 
         Args:
-            data (Union[Dict, RootTree]): JSON-compatible dictionary or `RootTree` object.
+            data (Union[Dict, Tree]): JSON-compatible dictionary or `Tree` object.
         """
         if self._fp:
             try:
                 with self._fp.open('w', encoding=self._encoding) as f:
-                    if isinstance(data, RootTree):
+                    if isinstance(data, Tree):
                         data = data.to_dict()
                     elif not isinstance(data, dict):
                         self._handle_exception(TypeError(f'Type {type(data)} not supported in write method.'))
@@ -159,15 +159,15 @@ class JsonFile(JsonBase, Readable, Writable):
             self._handle_exception(e)
             return {}
         
-    def read_tree(self) -> RootTree:
+    def read_tree(self) -> Tree:
         """
-        Reads data from the file and converts it to a `RootTree` structure.
+        Reads data from the file and converts it to a `Tree` structure.
 
         Returns:
-            RootTree: An instance representing the file's JSON data as a tree structure.
+            Tree: An instance representing the file's JSON data as a tree structure.
         """
         json_data = self.read()
-        return TreeConverter.to_root_tree(json_data)
+        return TreeConverter.to_tree(json_data)
 
     def _normalize_keys(self, keys_path: Union[List[str], str]) -> List[str]:
         """ Ensures keys are in a list format for consistent access. """
@@ -194,17 +194,17 @@ class JsonFile(JsonBase, Readable, Writable):
             data = data[key]
         return data
 
-    def set_entry(self, key_s: Union[List[str], str], value: Union[Any, Entry, RootTree]) -> None:
+    def set_entry(self, key_s: Union[List[str], str], value: Union[Any, Entry, Tree]) -> None:
         """
         Sets a value at a specified key path, creating intermediate keys if needed.
 
         Args:
             key_s (Union[List[str], str]): Path to the key as a list or string.
-            value (Union[Any, Entry, RootTree]): Value or object to assign at the path.
+            value (Union[Any, Entry, Tree]): Value or object to assign at the path.
         """
         key_s = self._normalize_keys(key_s)
         
-        if isinstance(value, (Entry, RootTree)):
+        if isinstance(value, (Entry, Tree)):
             value = value.to_dict()
 
         data = self._navigate_to_key(key_s, create_if_missing=True)

@@ -4,20 +4,20 @@ from typing import Dict, List, Union
 from ooj.core_classes import Entity, Entry
 
 
-class RootTree(Entity):
+class Tree(Entity):
     """
     Represents a hierarchical structure of Entries and Trees in the OOJ library.
 
-    The `RootTree` class allows the creation of nested JSON-compatible entities,
+    The `Tree` class allows the creation of nested JSON-compatible entities,
     which can include both individual entries and other tree structures, forming 
-    a tree-like hierarchy. Each `RootTree` instance can contain multiple `Entry` 
+    a tree-like hierarchy. Each `Tree` instance can contain multiple `Entry` 
     or `Tree` objects, stored in a list.
 
     Attributes:
-        tree (List[Union[Entry, RootTree]]): A list of entries and nested trees.
+        tree (List[Union[Entry, Tree]]): A list of entries and nested trees.
 
     Methods:
-        add(entry: Union[Entry, 'RootTree']):
+        add(entry: Union[Entry, 'Tree']):
             Adds a new entry or subtree to the root tree.
 
         remove(key: str):
@@ -27,15 +27,15 @@ class RootTree(Entity):
             Converts the root tree and its nested entries into a dictionary format.
     """
 
-    def __init__(self, *entries: Union[Entry, 'RootTree']) -> None:
+    def __init__(self, *entries: Union[Entry, 'Tree']) -> None:
         """
-        Initializes a RootTree instance with a list of entries or nested trees.
+        Initializes a Tree instance with a list of entries or nested trees.
 
         Args:
-            entries (Union[Entry, RootTree]): The entries or nested trees to include 
+            entries (Union[Entry, Tree]): The entries or nested trees to include 
                                               in the root tree.
         """
-        self.tree: List[Union[Entry, 'RootTree']] = list(entries)
+        self.tree: List[Union[Entry, 'Tree']] = list(entries)
 
     def __str__(self) -> str:
         """
@@ -46,12 +46,12 @@ class RootTree(Entity):
         """
         return str(self.to_dict())
 
-    def add(self, entry: Union[Entry, 'RootTree']):
+    def add(self, entry: Union[Entry, 'Tree']):
         """
         Adds a new entry or nested tree to the root tree.
 
         Args:
-            entry (Union[Entry, RootTree]): The entry or subtree to add.
+            entry (Union[Entry, Tree]): The entry or subtree to add.
         """
         self.tree.append(entry)
 
@@ -75,38 +75,14 @@ class RootTree(Entity):
 
         for entry in self.tree:
             if isinstance(entry, Entry):
-                dictionary.update(entry.to_dict())
-            elif isinstance(entry, RootTree):
-                dictionary[entry.key] = entry.to_dict()
-
+                if isinstance(entry.value, Tree):
+                    dictionary[entry.key] = entry.value.to_dict()  # Рекурсивное добавление поддерева
+                else:
+                    dictionary[entry.key] = entry.value  # Добавляем значение из Entry
+            else:
+                raise TypeError("The element must be an instance of Entry.")
+        
         return dictionary
-
-
-class Tree(RootTree):
-    """
-    Represents a tree with a key that can be part of a RootTree or other Trees.
-
-    The `Tree` class is a specialized version of `RootTree` that includes a unique key.
-    It can contain other entries or trees, allowing for the creation of deeply nested
-    tree structures within a `RootTree`.
-
-    Attributes:
-        key (str): The unique key identifying the tree.
-
-    Methods:
-        Inherits all methods from `RootTree`.
-    """
-
-    def __init__(self, key: str, *entries: Union[Entry, 'Tree']) -> None:
-        """
-        Initializes a Tree instance with a unique key and list of entries or subtrees.
-
-        Args:
-            key (str): The unique key of the tree.
-            entries (Union[Entry, Tree]): The entries or nested trees to include.
-        """
-        super().__init__(*entries)
-        self.key = key
 
 
 class TreeConverter:
@@ -114,72 +90,52 @@ class TreeConverter:
     Utility class for converting between JSON data and OOJ tree structures.
 
     The `TreeConverter` class provides methods for converting JSON-like dictionaries 
-    into `RootTree` or `Tree` objects and vice versa. This allows for seamless 
+    into `Tree` or `Tree` objects and vice versa. This allows for seamless 
     transitions between JSON and OOJ structures.
 
     Methods:
-        to_root_tree(json_data: dict) -> RootTree:
-            Converts a dictionary to a `RootTree` object.
+        to_root_tree(json_data: dict) -> Tree:
+            Converts a dictionary to a `Tree` object.
 
         to_tree(key: str, json_data: dict) -> Tree:
             Converts a dictionary with a specified key to a `Tree` object.
 
-        to_dict(json_object: Union[Entry, Tree, RootTree]) -> Dict:
-            Converts an OOJ object (Entry, Tree, or RootTree) back into a dictionary.
+        to_dict(json_object: Union[Entry, Tree, Tree]) -> Dict:
+            Converts an OOJ object (Entry, Tree, or Tree) back into a dictionary.
     """
 
     @classmethod
-    def to_root_tree(cls, json_data: dict) -> RootTree:
+    def to_tree(cls, data: dict) -> Tree:
         """
-        Converts a dictionary to a `RootTree` object.
+        Converts a dictionary into a `Tree` object, creating a hierarchical structure.
 
         Args:
-            json_data (dict): The dictionary to convert.
+            data (dict): The dictionary to convert into a `Tree`.
 
         Returns:
-            RootTree: A `RootTree` representing the dictionary structure.
+            Tree: A `Tree` instance representing the dictionary structure, where nested
+                dictionaries are recursively converted into subtree objects.
         """
-        root_tree = RootTree()
+        tree = Tree()
         
-        for key, value in json_data.items():
-            if isinstance(value, dict):
-                subtree = cls.to_tree(key, value)
-                root_tree.add(subtree)
-            else:
-                root_tree.add(Entry(key, value))
-
-        return root_tree
-
-    @classmethod
-    def to_tree(cls, key: str, json_data: dict) -> Tree:
-        """
-        Converts a dictionary with a specified key to a `Tree` object.
-
-        Args:
-            key (str): The key identifying the tree.
-            json_data (dict): The dictionary to convert.
-
-        Returns:
-            Tree: A `Tree` representing the dictionary structure.
-        """
-        tree = Tree(key)
-        
-        for entry_key, entry_value in json_data.items():
+        for entry_key, entry_value in data.items():
             if isinstance(entry_value, dict):
-                subtree = cls.to_tree(entry_key, entry_value)
-                tree.add(subtree)
+                # Recursively convert nested dictionaries to subtrees
+                subtree = cls.to_tree(entry_value)
+                tree.add(Entry(entry_key, subtree))  # Use key and subtree as value
             else:
+                # If the value is a primitive, create an Entry with this value
                 tree.add(Entry(entry_key, entry_value))
         
         return tree
     
     @classmethod
-    def to_dict(cls, json_object: Union[Entry, Tree, RootTree]) -> Dict:
+    def to_dict(cls, json_object: Union[Entry, Tree, Tree]) -> Dict:
         """
-        Converts an OOJ object (Entry, Tree, or RootTree) back into a dictionary.
+        Converts an OOJ object (Entry, Tree, or Tree) back into a dictionary.
 
         Args:
-            json_object (Union[Entry, Tree, RootTree]): The OOJ object to convert.
+            json_object (Union[Entry, Tree, Tree]): The OOJ object to convert.
 
         Returns:
             Dict: A dictionary representation of the OOJ object.

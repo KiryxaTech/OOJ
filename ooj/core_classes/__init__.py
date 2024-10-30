@@ -8,7 +8,7 @@ The core classes for OOJ library.
 from ooj import JsonFile
 from ooj.core_classes import *
 
-data = RootTree(
+data = Tree(
     Entry("name", "Alice"),
     Entry("age", "30"),
     Tree("passport",
@@ -27,12 +27,11 @@ print(data) # Output: {"name": "Alice", "age": 30, "passport": {"seria": "64 92"
 
 from .entity import Entity
 from .entry import Entry
-from .tree import RootTree, Tree, TreeConverter
+from .tree import Tree, TreeConverter
 
 __all__ = [
     "Entity",
     "Entry",
-    "RootTree",
     "Tree",
     "TreeConverter"
 ]

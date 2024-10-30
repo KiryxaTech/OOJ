@@ -1,5 +1,5 @@
 import pytest
-from ooj.serializer import Serializer
+from ooj import Serializer
 
 
 class Address:

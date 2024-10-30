@@ -1,16 +1,17 @@
 import pytest
 from pathlib import Path
-from ooj import JsonFile, RootTree, Tree, Entry
+from ooj import JsonFile
+from ooj.core_classes import Tree, Entry
 
 # Базовый путь для тестов JSON файлов
 BASE_PATH = Path('tests/files/test_json_files')
 
 # Пример тестового дерева
-test_tree = RootTree(
+test_tree = Tree(
     Entry("key", "value"),
-    Tree("tree",
+    Entry("tree", Tree(
         Entry("key1", "value1"),
-        Entry("key2", "value2")
+        Entry("key2", "value2"))
     )
 )
 
@@ -37,7 +38,7 @@ class TestJsonFile:
         file.write(data)
         file_data = file.read()
 
-        if isinstance(data, RootTree):
+        if isinstance(data, Tree):
             data = data.to_dict()
         
         assert file_data == data
