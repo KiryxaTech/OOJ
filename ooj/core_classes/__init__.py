@@ -22,6 +22,32 @@ file.write(data)
 
 data = file.read()
 print(data) # Output: {"name": "Alice", "age": 30, "passport": {"seria": "64 92", "number": 391049}}
+
+
+# Relationships
+class Person:
+    def __init__(self, name, age):
+        self.name = name
+        self.age = age
+
+alice = Person("Alice", 23)
+bob = Person("Bob", 22)
+chester = Person("Chester", 24)
+
+peoples = Tree(
+    Entry("alice", alice),
+    Entry("bob", bob),
+    Entry("chester", chester),
+    relationships={
+        "friends": {"alice", "bob"},
+        "colleagues": {"bob", "chester"}
+    }
+)
+# Output: {
+#   <ooj.core_classes.tree.Person object at 0x000002448C202B10>,
+#   <ooj.core_classes.tree.Person object at 0x000002448C202B40>
+# }
+peoples.get_relationship("friends")
 ```
 """
 
